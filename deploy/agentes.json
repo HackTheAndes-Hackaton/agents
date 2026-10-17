@@ -1,0 +1,11 @@
+{
+  "repositorio": "https://github.com/HackTheAndes-Hackaton/agents.git",
+  "framework": "custom",
+  "origen_alternativo": "subida local mediante --from-dir",
+  "proxy_modelo": true,
+  "inactividad_segundos": 600,
+  "agentes": [
+    {"nombre": "andes-comprension", "variables": {"AGENT_ROLE": "comprension", "PERSIST_HISTORY": "false"}},
+    {"nombre": "andes-deteccion", "variables": {"AGENT_ROLE": "deteccion", "PERSIST_HISTORY": "false"}}
+  ]
+}
