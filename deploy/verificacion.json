@@ -1,48 +1,28 @@
 {
   "fecha": "2026-10-17",
   "zona_horaria": "America/Lima",
-  "modelo_solicitado": "gpt-4.1-mini",
-  "proveedor": "proxy de Maritime",
-  "cli": "2.0.1",
-  "pruebas_locales_aprobadas": 6,
-  "estado_observado_de_ambos": "active",
-  "casos": [
-    {
-      "archivo": "examples/legitimo.json",
-      "comprension": "analizado",
-      "riesgo_estimado": "bajo",
-      "evidencias": [
-        {
-          "cita": "Hola hermana, ¿puedes prestarme 50 soles para el taxi? Se me quedó la billetera.",
-          "observacion": "Solicita dinero explicando que olvidó su billetera."
-        },
-        {
-          "cita": "Si quieres llámame al número de siempre para confirmar; también puedo esperar a que llegues.",
-          "observacion": "Ofrece medios para verificar la identidad y muestra disposición a esperar."
-        }
-      ],
-      "requiere_revision_humana": true
-    },
-    {
-      "archivo": "examples/riesgo.json",
-      "comprension": "analizado",
-      "riesgo_estimado": "alto",
-      "evidencias": [
-        {
-          "cita": "Deposita 2000 soles ahora o le haremos daño a tu familia.",
-          "observacion": "Indicacion directa de amenaza con exigencia de dinero."
-        },
-        {
-          "cita": "No cuelgues ni le cuentes a nadie.",
-          "observacion": "Petición para evitar que la amenaza sea conocida por otros."
-        },
-        {
-          "cita": "Tienes cinco minutos para transferir.",
-          "observacion": "Se establece un plazo corto e inmediato para cumplir la exigencia."
-        }
-      ],
-      "requiere_revision_humana": true
-    }
-  ],
-  "limite": "Dos ejemplos ficticios verifican integración; no estiman precisión general."
+  "comprension": {
+    "modelo": "gpt-4.1-mini",
+    "codigo_desplegado": "cb89583"
+  },
+  "deteccion": {
+    "modelo": "gpt-6-luna",
+    "endpoint": "/decisions",
+    "proveedor": "proxy de Maritime",
+    "codigo_desplegado": "450552f",
+    "umbral_provisional": 0.5,
+    "estado_observado": "active",
+    "casos": [
+      {
+        "archivo": "examples/legitimo.json",
+        "alerta": false
+      },
+      {
+        "archivo": "examples/riesgo.json",
+        "alerta": true
+      }
+    ]
+  },
+  "pruebas_locales_aprobadas": 9,
+  "limite": "Dos casos ficticios verifican la integración, no la precisión general. La captura y transcripción de audio siguen pendientes."
 }
