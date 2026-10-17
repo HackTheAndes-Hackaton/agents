@@ -25,7 +25,7 @@ Se emiten los formatos existentes `agent.status`, `transcript.update`, `risk.upd
 
 El campo antiguo `risk_percent` se utiliza por compatibilidad para mostrar la probabilidad de que corresponda emitir una alerta, **no una probabilidad validada de estafa**. Se acompaña de `score_kind` y una explicación en `reasons`. Antes de una demo pública, conviene adaptar esa etiqueta de la app. No se emiten coincidencias biométricas ni `call.ready_to_answer`; un FALSE no autoriza contestar automáticamente.
 
-No se ha modificado ni compilado la app móvil. Tampoco existe captura universal de llamadas de operadora: para analizar llamadas reales se necesita una fuente de audio autorizada del proveedor de telefonía o de la sesión WebRTC propia.
+La app móvil dispone del canal nativo de micrófono; su integración anterior está en mobile-repo PR #1, ya fusionado. El modo de conversación con marin se entrega en una PR posterior. Tampoco existe captura universal de llamadas de operadora: para analizar llamadas reales se necesita una fuente de audio autorizada del proveedor de telefonía o de la sesión WebRTC propia.
 
 ## Datos y acceso
 
@@ -53,3 +53,31 @@ Los fragmentos finales se ordenan y separan con un salto de línea antes de anal
 El detector de pausas no realiza cortes forzados mientras hay voz. Android espera una pausa de 1,2 segundos para dar margen a la entrega RTP antes del commit por DataChannel; la página web conserva su detector anterior con pausas más breves. La transcripción parcial sigue siendo visible, pero los agentes analizan fragmentos cerrados. Por eso la latencia de una alerta depende de las pausas y de los modelos; no se promete una duración fija ni precisión validada para ruido o telefonía.
 
 La app Android solicita entrada de micrófono a 48 kHz, evitando el valor de 8 kHz del emulador. Esto conserva más información acústica, pero no garantiza una transcripción perfecta. Una palabra dudosa permanece como texto sin convertirla en nombre o identidad.
+
+## Conversación con GPT-Live 1 y marin
+
+El modo predeterminado de la API sigue siendo `analysis`. Android añade un modo `assistant` para escuchar **y responder** por WebRTC. La página web actual conserva el modo de transcripción.
+
+Crear la sala con el código privado en `X-Voice-Token`:
+
+```json
+{"consentimiento_analisis":true,"mode":"assistant","consentimiento_voz_ia":true}
+```
+
+La oferta mantiene el contrato `POST /v1/sessions/<id>/offer` con el ticket de productor. El servidor crea `POST /live/sessions` a través de `OPENAI_BASE_URL`, con `gpt-live-1`, voz `marin`, `store:false` y delegación `client`. Nunca entrega la API key al móvil. La respuesta incluye SDP; el audio de entrada y de salida viaja por las pistas WebRTC y los eventos por `oai-events`. Se espera `session.started`; en este modo **no** se envían commits ni eventos de la API Realtime anterior.
+
+Solo el productor retransmite `session.input_transcript.delta`, `session.output_transcript.delta`, `session.delegation.created` y `session.closed`, dentro de `{"type":"live.event","event":{...}}`. La VM conserva deltas acotados, deduplicados por `event_id` y ordenados por `start_ms`, concatenando `delta` literalmente. No añade espacios o límites de turno inventados. Los subtítulos se agrupan por interlocutor y son parciales; no representan turnos finalizados. La voz del asistente aparece en pantalla pero se excluye del análisis de riesgo. Cada 2,5 segundos con nuevo texto se procesa una instantánea; los resultados obsoletos se descartan. Los errores nunca se convierten en FALSE.
+
+Para comprensión Live, el servidor forma fragmentos literales y el modelo selecciona ids y tipos. El servidor resuelve cada id al texto original y aplica la misma validación de contexto completo y negaciones. Así, omitir un punto en los subtítulos no permite que el modelo reconstruya palabras, añada puntuación o atribuya identidades.
+
+El servidor responde delegaciones y análisis mediante `live.command` con `session.thinking.append`. Android permite únicamente ese comando acotado. Las alertas son provisionales y se muestran al usuario; el agente no acusa al interlocutor ni lee puntuaciones de riesgo.
+
+Al detener, Android retira el emisor y deshabilita el audio, envía `session.close` y espera hasta dos segundos por `session.closed` antes de liberar los transportes. Se realiza además la limpieza HTTP de la sala. Los cierres no confirmados no son evidencia de consumo final. El `/hangup` HTTP del proxy devolvió errores en las pruebas; la confirmación observada procede del DataChannel. Los WebSockets Live del proxy devolvieron 403, por eso esta integración usa WebRTC y retransmisión del productor en vez de un sideband.
+
+### Telefonía y créditos
+
+Esta integración atiende conversaciones **dentro de la app por internet**. No conecta por sí sola el audio de llamadas SIM ni activa desvíos. El número actual necesita desviarse a un número receptor de un proveedor con un enlace de audio compatible. Zavu documenta números y Voice Agents habilitados por equipo, con su propio pipeline de voz; no se ha verificado un puente SIP/audio externo hacia Maritime ni el acceso del cupón del evento. No se ha contratado ni configurado un número.
+
+Las sesiones se verificaron con la credencial ya inyectada por Maritime y su proxy, sin una clave independiente de OpenAI. El resumen de uso de Maritime no desglosa minutos Live ni permite convertir los 100 créditos del evento a minutos. No se afirma que la telefonía esté cubierta ni que el saldo equivalga a USD 100. La tarifa pública de OpenAI para GPT-Live es USD 0,05/minuto, con backend y telefonía separados; no sustituye la tarifa efectiva de Maritime.
+
+Fuentes: [tarifas OpenAI](https://developers.openai.com/api/docs/pricing), [WebRTC Live](https://developers.openai.com/api/docs/guides/voice-webrtc?api=live), [sesiones y cierre](https://developers.openai.com/api/docs/guides/live-conversations), [delegación](https://developers.openai.com/api/docs/guides/live-delegation?delegation-mode=client), [Zavu Voice Agents](https://www.zavu.dev/es/voice-agents), [tarifas Zavu](https://www.zavu.dev/en/pricing/voice).

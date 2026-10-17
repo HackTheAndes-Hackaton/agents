@@ -1,16 +1,31 @@
 import { readFile } from 'node:fs/promises';
 const instructions = await readFile(new URL('./prompts/comprension.md', import.meta.url), 'utf8');
+const segmentInstructions = await readFile(new URL('./prompts/comprension-segmentos.md', import.meta.url), 'utf8');
 
 export async function understandIncident(incident, options) {
+  const segments = options.selectSegments ? understandingSegments(incident.transcripcion) : null;
+  if (segments && !segments.length) return groundUnderstanding({ rol: 'comprension', evidencias: [] }, incident.transcripcion);
+
+  const source = segments ? { consentimiento_analisis: true, segmentos_permitidos: segments } : incident;
+  const format = segments ? { type: 'json_schema', json_schema: { name: 'seleccion_fragmentos', strict: true, schema: {
+    type: 'object', additionalProperties: false, required: ['rol', 'evidencias'], properties: {
+      rol: { type: 'string', enum: ['comprension'] }, evidencias: { type: 'array', maxItems: 8, items: {
+        type: 'object', additionalProperties: false, required: ['tipo', 'segmento'], properties: {
+          tipo: { type: 'string', enum: Object.keys(kinds) }, segmento: { type: 'string', enum: segments.map(s => s.id) },
+        },
+      } },
+    },
+  } } } : { type: 'json_object' };
   const response = await fetch(`${options.baseUrl.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${options.apiKey}` },
-    body: JSON.stringify({ model: options.model ?? 'gpt-4.1-mini', messages: [{ role: 'system', content: instructions }, { role: 'user', content: JSON.stringify(incident) }], max_tokens: 1200, response_format: { type: 'json_object' } }),
+    body: JSON.stringify({ model: options.model ?? 'gpt-4.1-mini', messages: [{ role: 'system', content: segments ? segmentInstructions : instructions }, { role: 'user', content: JSON.stringify(source) }], max_tokens: 1200, response_format: format }),
     signal: AbortSignal.timeout(options.timeoutMs ?? 20000),
   });
   if (!response.ok) throw new Error(`Comprensión: HTTP ${response.status}`);
   const body = await response.json();
-  return groundUnderstanding(JSON.parse(body.choices?.[0]?.message?.content ?? 'null'), incident.transcripcion);
+  const raw = JSON.parse(body.choices?.[0]?.message?.content ?? 'null');
+  return segments ? groundSegmentSelection(raw, segments, incident.transcripcion) : groundUnderstanding(raw, incident.transcripcion);
 }
 
 // Solo se publica texto literal o redactado por el servidor; nunca prosa libre del modelo.
@@ -47,4 +62,21 @@ export function groundUnderstanding(raw, transcript) {
     incertidumbres: ['No se determina quién habla ni quién recibe una petición o amenaza.', 'Las palabras dudosas deben contrastarse con el audio; no se reconstruyen a partir de suposiciones.'],
     limitaciones: ['Identidades no verificadas ni atribuidas.', 'Posibles errores de transcripción; una cita literal no confirma que el audio diga lo mismo.'],
   };
+}
+
+
+// Selección por id: la puntuación del modelo nunca reemplaza los subtítulos originales.
+export function understandingSegments(transcript) {
+  return [...transcript.matchAll(/[^.!?\n]+(?:[.!?]+|$)/g)]
+    .map(m => m[0].trim()).filter(text => text && text.length <= 600)
+    .slice(-128).map((text, i) => ({ id: `s${i}`, texto: text }));
+}
+export function groundSegmentSelection(raw, segments, transcript) {
+  if (raw?.rol !== 'comprension' || !Array.isArray(raw.evidencias) || raw.evidencias.length > 8) throw Error('Selección inválida');
+  const selected = new Map(segments.map(s => [s.id, s.texto]));
+  const evidencias = raw.evidencias.map(e => {
+    if (!e || typeof e.segmento !== 'string' || !selected.has(e.segmento)) throw Error('Segmento sin respaldo');
+    return { tipo: e.tipo, cita: selected.get(e.segmento) };
+  });
+  return groundUnderstanding({ rol: 'comprension', evidencias }, transcript);
 }

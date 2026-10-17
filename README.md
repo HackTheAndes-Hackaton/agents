@@ -71,3 +71,5 @@ Esta entrega procesa transcripciones y ofrece un canal de voz propio con `AGENT_
 Consulta [el contrato del canal y la conexión de Tiskz](docs/canal-voz.md). No se ha modificado la app Android ni implementado captura de llamadas de operadora. Los agentes no controlan llamadas, presentan denuncias, publican sospechosos ni identifican personas por su voz. El detector evalúa el texto y el contexto; no escucha tono ni verifica identidad. La interfaz muestra los errores de transcripción y análisis.
 
 Los prompts de cada rol están en `prompts/`. Los ejemplos y las pruebas no demuestran precisión general ni probabilidades calibradas.
+
+La API de voz ofrece también `mode: "assistant"`: GPT-Live 1 responde en español con voz `marin`, mientras los dos agentes analizan únicamente los subtítulos de quien llama. Requiere consentimiento específico y la app Android actualizada. Véanse el contrato, las limitaciones de telefonía y el cierre de consumo en [canal de voz](docs/canal-voz.md#conversación-con-gpt-live-1-y-marin).

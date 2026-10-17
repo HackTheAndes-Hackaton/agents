@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { groundUnderstanding } from '../understanding.mjs';
+import { groundUnderstanding, understandingSegments, groundSegmentSelection } from '../understanding.mjs';
 
 const corrupt = 'Enrique mil soles ahora mismo o le haré daño a tu familia. No cortes la llamada.';
 test('comprensión: una palabra mal transcrita nunca se convierte en identidad o hablante', () => {
@@ -33,4 +33,32 @@ test('comprensión: rechaza extracción que elimina negación o contexto anterio
   for (const [source, quote] of [['No necesito pagos ni datos personales.', 'necesito pagos ni datos personales.'], ['La noticia cita una amenaza: Transfiere ahora.', 'Transfiere ahora.']]) {
     assert.throws(() => groundUnderstanding({ rol: 'comprension', evidencias: [{ tipo: 'solicitud', cita: quote }] }, source), /Evidencia sin respaldo/);
   }
+});
+
+
+test('comprensión Live: selecciona ids y copia negación completa aunque falte puntuación', () => {
+  const text=' Hola, soy Ana. Confirmamos la reunión a las diez No necesito pagos ni datos personales. Gracias y hasta mañana';
+  const segments=understandingSegments(text);
+  const result=groundSegmentSelection({rol:'comprension',evidencias:[{tipo:'negacion',segmento:'s1',cita:'Necesito pagos.'}]},segments,text);
+  assert.equal(result.evidencias[0].cita,'Confirmamos la reunión a las diez No necesito pagos ni datos personales.');
+  assert.deepEqual(result.participantes_mencionados,[]);
+  assert.doesNotMatch(result.resumen,/Ana/);
+  assert.throws(()=>groundSegmentSelection({rol:'comprension',evidencias:[{tipo:'contexto',segmento:'inventado'}]},segments,text));
+});
+
+test('comprensión Live: exige ids con esquema cerrado y mantiene validación literal', async t => {
+  const http = await import('node:http');
+  const { once } = await import('node:events');
+  const { understandIncident } = await import('../understanding.mjs');
+  let request;
+  const provider = http.createServer(async (req,res) => {
+    let raw='';for await (const c of req) raw+=c;request=JSON.parse(raw);
+    res.setHeader('Content-Type','application/json');
+    res.end(JSON.stringify({choices:[{message:{content:JSON.stringify({rol:'comprension',evidencias:[{tipo:'negacion',segmento:'s0'}]})}}]}));
+  });
+  provider.listen(0,'127.0.0.1');await once(provider,'listening');t.after(()=>new Promise(r=>provider.close(r)));
+  const result=await understandIncident({transcripcion:'No necesito pagos ni datos personales',consentimiento_analisis:true},{baseUrl:`http://127.0.0.1:${provider.address().port}`,apiKey:'fake',selectSegments:true});
+  assert.equal(request.response_format.type,'json_schema');assert.equal(request.response_format.json_schema.strict,true);
+  assert.deepEqual(request.response_format.json_schema.schema.properties.evidencias.items.properties.segmento.enum,['s0']);
+  assert.equal(result.evidencias[0].cita,'No necesito pagos ni datos personales');
 });
