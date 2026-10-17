@@ -55,7 +55,7 @@ export async function createVoiceServer(config = {}) {
     try {
       while (!room.closed && room[processed] !== room.revision) {
         const revision = room.revision;
-        const transcripcion = [...room.turns.values()].sort((a, b) => a.sequence - b.sequence).map(t => t.text).join(' ').slice(-12000);
+        const transcripcion = [...room.turns.values()].sort((a, b) => a.sequence - b.sequence).map(t => t.text).join('\n').slice(-12000);
         room[processed] = revision;
         const incident = { consentimiento_analisis: true, transcripcion };
         if (component === 'detect') emit(room, { type: 'agent.status', status: 'analyzing' });

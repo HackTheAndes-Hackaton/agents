@@ -4,6 +4,7 @@ import http from 'node:http';
 import { once } from 'node:events';
 import { WebSocket } from 'ws';
 import { createVoiceServer } from '../voice.mjs';
+import { groundUnderstanding } from '../understanding.mjs';
 const code = 'test-access-code-only-for-tests';
 async function fixture(t, config = {}) {
   const server = await createVoiceServer({ apiKey: 'test-key', accessCode: code, detect: async () => ({ alerta: true, probabilidad: .9 }), understand: async () => ({ rol: 'comprension', evidencias: [], limitaciones: [] }), ...config });
@@ -114,4 +115,13 @@ test('Voz: retransmite la secuencia de turnos aunque lleguen finales invertidos'
   await until(() => p.events.filter(e => e.type === 'transcript.update').length === 2);
   const lines = p.events.filter(e => e.type === 'transcript.update');
   assert.deepEqual(lines.map(e => [e.id, e.sequence]), [['second', 1], ['first', 0]]);
+});
+
+test('Voz: conserva límites entre turnos sin puntuación para validar citas completas', async t => {
+  const f = await fixture(t, { understand: async incident => groundUnderstanding({ rol: 'comprension', evidencias: [{ tipo: 'negacion', cita: 'No necesito pagos ni datos personales.' }] }, incident.transcripcion) });
+  const room = await f.create(), p = await f.connect(room);
+  p.ws.send(JSON.stringify({ type: 'transcript.update', id: 'a', text: 'Confirmamos la reunión a las diez', sequence: 0, final: true }));
+  p.ws.send(JSON.stringify({ type: 'transcript.update', id: 'b', text: 'No necesito pagos ni datos personales.', sequence: 1, final: true }));
+  await until(() => p.events.some(e => e.type === 'understanding.update' && e.revision === 2));
+  assert.equal(p.events.find(e => e.type === 'understanding.update' && e.revision === 2).analysis.evidencias[0].cita, 'No necesito pagos ni datos personales.');
 });
