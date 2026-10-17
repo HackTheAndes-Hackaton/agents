@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-
+import { detectAlert, parseThreshold } from './decisions.mjs';
 
 export async function createAgentServer(config = {}) {
   const dataDir = config.dataDir ?? process.env.DATA_DIR ?? '/data';
@@ -12,8 +12,10 @@ export async function createAgentServer(config = {}) {
   const model = config.model ?? process.env.OPENAI_MODEL ?? 'gpt-4.1-mini';
   const role = config.role ?? process.env.AGENT_ROLE ?? 'comprension';
   if (!['comprension', 'deteccion'].includes(role)) throw new Error('AGENT_ROLE debe ser comprension o deteccion');
-  const instructions = config.instructions ?? await readFile(new URL(`./prompts/${role}.md`, import.meta.url), 'utf8');
-  const persistHistory = config.persistHistory ?? process.env.PERSIST_HISTORY === 'true';
+  const instructions = role === 'comprension' ? config.instructions ?? await readFile(new URL('./prompts/comprension.md', import.meta.url), 'utf8') : null;
+  const decisionModel = config.decisionModel ?? process.env.OPENAI_DECISION_MODEL ?? 'gpt-6-luna';
+  const threshold = role === 'deteccion' ? parseThreshold(config.alertThreshold ?? process.env.ALERT_THRESHOLD) : null;
+  const persistHistory = role === 'comprension' && (config.persistHistory ?? process.env.PERSIST_HISTORY === 'true');
   const timeoutMs = config.timeoutMs ?? 24000;
   const busy = new Set();
 
@@ -23,7 +25,7 @@ export async function createAgentServer(config = {}) {
       res.end(JSON.stringify(body));
     };
     if (req.method === 'GET' && req.url === '/health') {
-      return send(200, { ok: true, rol: role, modelo_configurado: Boolean(apiKey), historial_persistente: persistHistory });
+      return send(200, { ok: true, rol: role, modelo: role === 'deteccion' ? decisionModel : model, modelo_configurado: Boolean(apiKey), historial_persistente: persistHistory });
     }
     if (req.method !== 'POST' || req.url !== '/chat') return send(404, { error: 'Ruta no encontrada' });
     let conversationKey;
@@ -51,6 +53,11 @@ export async function createAgentServer(config = {}) {
         return send(400, { error: 'conversationId debe contener de 1 a 256 caracteres' });
       }
       if (!apiKey) return send(503, { error: 'Falta configurar el modelo. Habilita Maritime LLM o configura OPENAI_API_KEY.' });
+      if (role === 'deteccion') {
+        const result = await detectAlert(incident, { baseUrl, apiKey, model: decisionModel, threshold, timeoutMs });
+        console.log(JSON.stringify({ event: 'detection_completed', model: result.modelo }));
+        return send(200, { response: JSON.stringify(result.alerta), conversationId });
+      }
       const key = createHash('sha256').update(conversationId).digest('hex');
       if (busy.has(key)) return send(409, { error: 'Esta conversación está procesando otro mensaje. Reintenta en unos segundos.' });
       conversationKey = key;
@@ -83,7 +90,6 @@ export async function createAgentServer(config = {}) {
       for (const evidence of analysis.evidencias) {
         if (typeof evidence.cita !== 'string' || !evidence.cita.trim() || !incident.transcripcion.includes(evidence.cita)) throw new Error('Cita sin respaldo');
       }
-      if (role === 'deteccion' && !['bajo', 'medio', 'alto', 'informacion_insuficiente'].includes(analysis.riesgo_estimado)) throw new Error('Riesgo inválido');
       const nextHistory = [...history, { role: 'user', content: body.message.trim() }, { role: 'assistant', content: reply }].slice(-20);
       if (persistHistory) {
         await writeFile(`${historyPath}.tmp`, JSON.stringify(nextHistory), { mode: 0o600 });
@@ -94,7 +100,7 @@ export async function createAgentServer(config = {}) {
     } catch (error) {
       const timedOut = error.name === 'TimeoutError' || error.name === 'AbortError';
       console.error(JSON.stringify({ event: 'chat_failed', type: error.name }));
-      if (!res.headersSent) send(timedOut ? 504 : 500, { error: timedOut ? 'Se agotó el tiempo de respuesta. Prueba una solicitud más breve.' : 'El agente no pudo completar el análisis. Revisa los registros.' });
+      if (!res.headersSent) send(timedOut ? 504 : error.statusCode ?? 500, { error: timedOut ? 'Se agotó el tiempo de respuesta. Prueba una solicitud más breve.' : 'El agente no pudo completar el análisis. Revisa los registros.' });
     } finally {
       if (conversationKey) busy.delete(conversationKey);
     }

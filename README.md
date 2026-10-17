@@ -3,9 +3,9 @@
 Prototipo en español basado en el resumen de HackTheAndes:
 
 1. **andes-comprension** organiza la transcripción autorizada: resumen, solicitudes, hechos, citas e incertidumbres.
-2. **andes-deteccion** recibe la transcripción original y el análisis anterior, evalúa señales de riesgo y propone opciones que controla la persona.
+2. **andes-deteccion** evalúa la transcripción original con `gpt-6-luna` mediante OpenAI Decisions y devuelve `true` o `false` para una alerta preventiva. El análisis previo no se utiliza como evidencia para el detector.
 
-Cada agente usa el mismo servidor y un valor distinto de `AGENT_ROLE`. Las citas del modelo se comprueban contra la transcripción. El resultado es provisional y requiere revisión humana.
+Cada agente usa el mismo servidor y un valor distinto de `AGENT_ROLE`. Comprensión conserva `gpt-4.1-mini` y sus citas se comprueban contra la transcripción. Detección recibe una probabilidad tipada, no texto generado, y el código la convierte en booleano. El resultado es provisional y requiere revisión humana.
 
 ## Uso
 
@@ -18,7 +18,7 @@ npm start
 npm test
 ```
 
-`GET /health` comprueba el servidor sin invocar al modelo. `POST /chat` recibe `{"message":"<incidente JSON serializado>"}`. El incidente debe incluir `consentimiento_analisis: true` y `transcripcion` no vacía. La respuesta es `{"response":"<análisis JSON serializado>"}`. Un saludo devuelve instrucciones sin llamar al modelo.
+`GET /health` comprueba el servidor sin invocar al modelo. `POST /chat` recibe `{"message":"<incidente JSON serializado>"}`. El incidente debe incluir `consentimiento_analisis: true` y `transcripcion` no vacía. Comprensión responde con `{"response":"<análisis JSON serializado>"}`; Detección usa `{"response":"true"}` o `{"response":"false"}`. Este sobre conserva el contrato de Maritime: el contenido del detector se convierte a booleano con `JSON.parse(response)`. Un saludo devuelve instrucciones sin llamar al modelo.
 
 Los archivos de `examples/` contienen escenarios ficticios. Tras el despliegue:
 
@@ -36,10 +36,14 @@ El flujo duerme Comprensión antes de llamar a Detección porque el plan gratuit
 - `AGENT_ROLE`: `comprension` o `deteccion`.
 - `OPENAI_API_KEY` y `OPENAI_BASE_URL`: acceso al modelo; Maritime puede inyectarlos al habilitar su proxy.
 - `OPENAI_MODEL`: por defecto `gpt-4.1-mini`; debe estar disponible en el proveedor.
+- `OPENAI_DECISION_MODEL`: por defecto `gpt-6-luna` para Detección. Requiere el endpoint `/decisions`, comprobado a través del proxy de Maritime el 17/10/2026.
+- `ALERT_THRESHOLD`: umbral de alerta entre 0 y 1; valor provisional `0.5`. No está calibrado para estafas en español: debe elegirse con ejemplos etiquetados según los costos de falsas alarmas y casos omitidos.
 - `PORT`: puerto inyectado por Maritime; 3000 en desarrollo. Se escucha en `0.0.0.0`.
 - `PERSIST_HISTORY`: desactivado por defecto. Con `true`, conserva diez intercambios por `conversationId` bajo `DATA_DIR` (por defecto `/data`). Usa IDs distintos para incidentes independientes.
 
 El agente no guarda transcripciones en disco por defecto. El procesamiento sí envía texto al proveedor del modelo; esta opción no controla la retención de Maritime ni del proveedor. El permiso para analizar es independiente del permiso para conservar o compartir. Las llamadas al modelo consumen créditos de IA separados del alojamiento.
+
+Detección no guarda historial aunque se active `PERSIST_HISTORY`. `true` pide revisar una posible situación de riesgo; `false` indica que la probabilidad quedó por debajo del umbral, sin garantizar seguridad. Fallos de red, probabilidades inválidas y negativas del modelo generan errores HTTP; no se convierten en `false`. OpenAI Decisions está en beta pública. [Documentación y precio del endpoint](https://developers.openai.com/api/docs/guides/decisions): USD 0.10 por millón de tokens de entrada, sin cobro de salida; comprueba el consumo real en Maritime.
 
 ## Despliegue
 
@@ -54,5 +58,7 @@ Con maritime-cli 2.0.1, el comando abreviado `maritime chat <nombre> <JSON>` pue
 ## Alcance
 
 Esta entrega procesa transcripciones. La captura ESP32/INMP441, el transporte autenticado de audio, la transcripción, la aplicación móvil, el panel y la comparación de voz son integraciones posteriores. Los agentes no controlan llamadas, presentan denuncias, publican sospechosos ni identifican personas por su voz.
+
+En la futura integración de voz, el transcriptor debe enviar un fragmento con contexto suficiente de la conversación, no palabras aisladas. El detector no escucha audio ni evalúa tono. La aplicación debe mostrar cuándo el audio, la transcripción o la detección están indisponibles. La transcripción y una eventual respuesta hablada tienen costos separados del clasificador.
 
 Los prompts de cada rol están en `prompts/`. Los ejemplos y las pruebas no demuestran precisión general ni probabilidades calibradas.

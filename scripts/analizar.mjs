@@ -26,6 +26,11 @@ sleepIfActive(detectionName);
 const comprension = chat(comprehensionName, incident);
 // El plan gratuito permite una máquina despierta a la vez.
 execFileSync('maritime', ['sleep', comprehensionName, '--json'], { stdio: ['ignore', 'ignore', 'inherit'], timeout: 90000 });
-const deteccion = chat(detectionName, { ...incident, comprension });
-sleepIfActive(detectionName);
-console.log(JSON.stringify({ comprension, deteccion }, null, 2));
+let alerta;
+try {
+  alerta = chat(detectionName, incident);
+  if (typeof alerta !== 'boolean') throw new Error('El detector desplegado no devolvió un booleano');
+} finally {
+  sleepIfActive(detectionName);
+}
+console.log(JSON.stringify({ comprension, alerta }, null, 2));

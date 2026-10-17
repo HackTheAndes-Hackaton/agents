@@ -18,10 +18,13 @@ async function fixture(t, options = {}) {
   const provider = http.createServer(async (req, res) => {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
-    requests.push(JSON.parse(Buffer.concat(chunks)));
+    requests.push({ path: req.url, ...JSON.parse(Buffer.concat(chunks)) });
     if (options.delay) await new Promise(resolve => setTimeout(resolve, options.delay));
     res.writeHead(options.status ?? 200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ choices: [{ message: { content: JSON.stringify(options.result ?? { rol: 'comprension', resumen: 'Petición de transferencia', evidencias: [{ cita: 'Transfiere dinero ahora.', observacion: 'Petición explícita' }], limitaciones: ['Identidad no verificada'] }) } }] }));
+    const result = options.role === 'deteccion'
+      ? options.result ?? { model: 'gpt-6-luna', answers: [{ type: 'predicate', name: 'alerta', probability: options.probability ?? 0.9 }] }
+      : { choices: [{ message: { content: JSON.stringify(options.result ?? { rol: 'comprension', resumen: 'Petición de transferencia', evidencias: [{ cita: 'Transfiere dinero ahora.', observacion: 'Petición explícita' }], limitaciones: ['Identidad no verificada'] }) } }] };
+    res.end(JSON.stringify(result));
   });
   const baseUrl = await listen(provider);
   const dataDir = await mkdtemp(join(tmpdir(), 'andes-test-'));
@@ -52,9 +55,37 @@ test('rechaza citas que no existen en la fuente', async t => {
   assert.equal((await f.chat(incident)).status, 500);
 });
 
-test('detección exige un nivel de riesgo permitido', async t => {
-  const f = await fixture(t, { role: 'deteccion', result: { rol: 'deteccion', riesgo_estimado: 'culpable', evidencias: [], limitaciones: [] } });
-  assert.equal((await f.chat(incident)).status, 500);
+test('detección rechaza probabilidades inválidas y no devuelve false', async t => {
+  const f = await fixture(t, { role: 'deteccion', result: { answers: [{ type: 'predicate', name: 'alerta', probability: 1.1 }] } });
+  const response = await f.chat(incident);
+  assert.equal(response.status, 502);
+  assert.equal((await response.json()).response, undefined);
+});
+
+test('Decisions convierte probabilidades en booleanos sin generar texto', async t => {
+  for (const [probability, expected] of [[0.1, false], [0.9, true], [0.5, true]]) {
+    const f = await fixture(t, { role: 'deteccion', probability, persistHistory: true });
+    const response = await f.chat({ ...incident, comprension: { resumen: 'No enviar al detector' } });
+    assert.equal(response.status, 200);
+    assert.equal(JSON.parse((await response.json()).response), expected);
+    assert.equal(f.requests[0].path, '/decisions');
+    assert.equal(f.requests[0].model, 'gpt-6-luna');
+    assert.equal(f.requests[0].input, incident.transcripcion);
+    assert.equal(f.requests[0].questions[0].type, 'predicate');
+    assert.equal(f.requests[0].messages, undefined);
+    assert.deepEqual(await readdir(f.dataDir), []);
+  }
+});
+
+test('una negativa del modelo y un fallo del proveedor no son ausencia de riesgo', async t => {
+  const refused = await fixture(t, { role: 'deteccion', result: { answers: [{ type: 'refusal', name: 'alerta' }] } });
+  assert.equal((await refused.chat(incident)).status, 422);
+  const failed = await fixture(t, { role: 'deteccion', status: 401 });
+  assert.equal((await failed.chat(incident)).status, 502);
+});
+
+test('rechaza un umbral mal configurado antes de iniciar', async () => {
+  await assert.rejects(createAgentServer({ role: 'deteccion', alertThreshold: 'incorrecto' }), /ALERT_THRESHOLD/);
 });
 
 test('historial opcional persiste y separa conversaciones', async t => {
