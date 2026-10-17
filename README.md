@@ -47,6 +47,10 @@ El Dockerfile está en la raíz. Crea dos agentes de framework `custom` con el m
 
 El servicio debe permanecer detrás del acceso autenticado de Maritime: no implementa autenticación propia. Las llamadas al proveedor tienen un límite de 24 segundos para respetar el presupuesto de respuesta de Maritime.
 
+Los dos agentes se crearon desde el archivo del código de este repositorio, mediante subida local. No se configuró despliegue automático desde GitHub. Los IDs y roles están en `deploy/agentes.json`; el directorio está vinculado a Comprensión mediante `.maritime/` (ignorado por Git). `maritime.json` y la habilidad de `.claude/skills/maritime/` permiten retomar la operación. Usa siempre el nombre explícito para operar Detección.
+
+Con maritime-cli 2.0.1, el comando abreviado `maritime chat <nombre> <JSON>` puede alterar la entrada JSON. El script usa `maritime agents chat <id> --message <JSON> --json`, que conserva el contenido. Los parámetros de `--stdin` deben incluir el cuerpo completo: esa modalidad no incorpora las opciones de creación adicionales.
+
 ## Alcance
 
 Esta entrega procesa transcripciones. La captura ESP32/INMP441, el transporte autenticado de audio, la transcripción, la aplicación móvil, el panel y la comparación de voz son integraciones posteriores. Los agentes no controlan llamadas, presentan denuncias, publican sospechosos ni identifican personas por su voz.

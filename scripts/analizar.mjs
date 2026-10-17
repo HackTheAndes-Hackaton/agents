@@ -5,7 +5,11 @@ if (!process.argv[2]) throw new Error('Uso: node scripts/analizar.mjs examples/r
 const incident = JSON.parse(await readFile(process.argv[2], 'utf8'));
 if (incident.consentimiento_analisis !== true) throw new Error('Se requiere autorización explícita para analizar');
 function chat(name, input) {
-  const raw = execFileSync('maritime', ['chat', name, JSON.stringify(input), '--json'], { encoding: 'utf8', timeout: 90000, maxBuffer: 1024 * 1024 });
+  const metadata = JSON.parse(execFileSync('maritime', ['status', name, '--json'], { encoding: 'utf8', timeout: 90000 }));
+  const id = metadata.id ?? metadata.data?.id;
+  if (!id) throw new Error(`No se pudo resolver el agente ${name}`);
+  // El alias posicional chat de CLI 2.0.1 altera mensajes JSON; usa la opción tipada.
+  const raw = execFileSync('maritime', ['agents', 'chat', id, '--message', JSON.stringify(input), '--json'], { encoding: 'utf8', timeout: 90000, maxBuffer: 1024 * 1024 });
   const reply = JSON.parse(raw);
   const text = reply.response ?? reply.data?.response;
   if (typeof text !== 'string') throw new Error('El chat no devolvió texto');

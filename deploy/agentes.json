@@ -5,7 +5,24 @@
   "proxy_modelo": true,
   "inactividad_segundos": 600,
   "agentes": [
-    {"nombre": "andes-comprension", "variables": {"AGENT_ROLE": "comprension", "PERSIST_HISTORY": "false"}},
-    {"nombre": "andes-deteccion", "variables": {"AGENT_ROLE": "deteccion", "PERSIST_HISTORY": "false"}}
-  ]
+    {
+      "nombre": "andes-comprension",
+      "variables": {
+        "AGENT_ROLE": "comprension",
+        "PERSIST_HISTORY": "false"
+      },
+      "id": "0faef060-5d3e-4d48-b567-fe0e8982b807",
+      "projectId": "407a3443-9c71-40b0-a70c-ebb6d0d2bbc2"
+    },
+    {
+      "nombre": "andes-deteccion",
+      "variables": {
+        "AGENT_ROLE": "deteccion",
+        "PERSIST_HISTORY": "false"
+      },
+      "id": "6d4f12e7-1ea3-4bb2-b9df-40be281b1eef",
+      "projectId": "6a331e86-f693-44a5-9eba-2aa35bac3977"
+    }
+  ],
+  "codigo_desplegado": "cb89583"
 }
