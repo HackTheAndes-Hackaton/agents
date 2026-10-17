@@ -1,12 +1,13 @@
 // SDK mínimo: acepta cualquier MediaStream autorizado, incluido el de otro WebRTC.
-export async function connectVoice({ stream, accessCode, consentimiento, baseUrl = location.origin, onEvent = () => {} }) {
+export async function connectVoice({ stream, accessCode, consentimiento, baseUrl = location.origin + location.pathname.replace(/\/$/, ''), onEvent = () => {} }) {
+  baseUrl = baseUrl.replace(/\/$/, '');
   if (consentimiento !== true) throw new Error('Confirma la autorización de análisis.');
   const request = async (path, body, secret = accessCode) => {
     const r = await fetch(`${baseUrl}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` }, body: JSON.stringify(body) });
     const data = await r.json(); if (!r.ok) throw new Error(data.error ?? `HTTP ${r.status}`); return data;
   };
   const room = await request('/v1/sessions', { consentimiento_analisis: true });
-  const eventUrl = new URL('/ws/calls', baseUrl); eventUrl.protocol = eventUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+  const eventUrl = new URL(`${baseUrl}/ws/calls`); eventUrl.protocol = eventUrl.protocol === 'https:' ? 'wss:' : 'ws:';
   eventUrl.searchParams.set('session', room.session_id); eventUrl.searchParams.set('ticket', room.producer_token);
   const ws = new WebSocket(eventUrl);
   const pc = new RTCPeerConnection();
@@ -71,7 +72,7 @@ export async function connectVoice({ stream, accessCode, consentimiento, baseUrl
         dc.send(JSON.stringify({ type: 'input_audio_buffer.commit' })); pendingAudio = false;
       }
     }, 100);
-    const observerUrl = new URL(room.events_path, baseUrl); observerUrl.protocol = eventUrl.protocol;
+    const observerUrl = new URL(baseUrl + room.events_path); observerUrl.protocol = eventUrl.protocol;
     onEvent({ type: 'client.connected', observer_url: observerUrl.href, expires_at: room.expires_at });
     return { stop, peerConnection: pc, sessionId: room.session_id };
   } catch (error) { await stop(); throw error; }

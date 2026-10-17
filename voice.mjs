@@ -107,7 +107,7 @@ export async function createVoiceServer(config = {}) {
     try {
       const url = new URL(req.url, 'http://localhost');
       if (req.method === 'GET' && url.pathname === '/health') return send(200, { ok: true, role: 'voz', webrtc: true, models: { transcription: 'gpt-live-transcribe', understanding: 'gpt-4.1-mini', detection: 'gpt-6-luna' }, configured: Boolean(apiKey) });
-      const staticName = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
+      const staticName = url.searchParams.get('asset') ?? (url.pathname === '/' ? 'index.html' : url.pathname.slice(1));
       if (req.method === 'GET' && files.has(staticName)) {
         res.writeHead(200, { 'Content-Type': staticName.endsWith('.js') ? 'text/javascript; charset=utf-8' : staticName.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' wss:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'" });
         return res.end(files.get(staticName));
