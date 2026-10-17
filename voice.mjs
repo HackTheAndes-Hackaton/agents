@@ -97,6 +97,7 @@ export async function createVoiceServer(config = {}) {
   }
   function authorizeRoom(req, id) {
     const room = rooms.get(id);
+    if (room && Date.now() >= room.started + sessionMs) void endRoom(room, 'expired');
     if (!room || room.closed) throw statusError('Sesión inexistente o vencida', 404);
     if (!equal(req.headers.authorization?.replace(/^Bearer /, ''), room.producer)) throw statusError('Acceso no autorizado', 401);
     return room;
@@ -160,6 +161,7 @@ export async function createVoiceServer(config = {}) {
     let url;
     try { url = new URL(req.url, 'http://localhost'); } catch { socket.destroy(); return; }
     const room = rooms.get(url.searchParams.get('session'));
+    if (room && Date.now() >= room.started + sessionMs) void endRoom(room, 'expired');
     const ticket = url.searchParams.get('ticket');
     const producer = room && equal(ticket, room.producer);
     if (url.pathname !== '/ws/calls' || !room || room.closed || (!producer && !equal(ticket, room.observer)) || room.clients.size >= 5) { socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'); return; }

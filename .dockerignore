@@ -1,4 +1,5 @@
 .git
+.maritime
 .env
 .env.*
 node_modules

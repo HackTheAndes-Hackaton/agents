@@ -39,3 +39,9 @@ El código privado se guarda localmente en `.maritime/voice-access.json`, exclui
 
 Referencia de transcripción: https://developers.openai.com/api/docs/guides/realtime-transcription
 Referencia de WebRTC: https://developers.openai.com/api/docs/guides/voice-webrtc?api=realtime
+
+## Arranque alternativo sin constructor remoto
+
+Si el constructor de ZIP queda bloqueado, `node scripts/preparar-runtime.mjs` empaqueta únicamente el código del servicio, sus recursos y la dependencia `ws` instalada por `npm ci`. No incluye `.env`, `.maritime`, audios ni el repositorio móvil. Genera variables en `.maritime/runtime-env.json`; el servicio puede arrancar con una imagen oficial e inmutable de Node usando `NODE_OPTIONS=--import=...`. El código comprimido se almacena como variable secreta de Maritime y se reconstruye en `/data/voice-runtime-<sha256>` al arrancar. No se publica una imagen con código privado en un registro público.
+
+El Dockerfile sigue disponible para despliegues convencionales. Para actualizar el arranque alternativo, vuelve a generar el paquete, importa sus tres variables como secretos y reinicia la VM; no hace falta crear otra máquina. No publiques el archivo de variables ni lo mezcles con el código de acceso. Al ejecutar comandos Node de diagnóstico dentro de la VM, usa `env -u NODE_OPTIONS node ...` para evitar iniciar accidentalmente otra copia del servidor.
