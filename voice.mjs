@@ -46,36 +46,34 @@ export async function createVoiceServer(config = {}) {
     room.turns.clear();
     rooms.delete(room.id);
   }
-  async function analyze(room) {
-    if (room.analyzing || room.closed) return;
-    room.analyzing = true;
+  async function analyze(room, component) {
+    const running = `${component}Running`, processed = `${component}Revision`;
+    if (room[running] || room.closed) return;
+    room[running] = true;
     try {
-      while (!room.closed && room.analyzedRevision !== room.revision) {
+      while (!room.closed && room[processed] !== room.revision) {
         const revision = room.revision;
         const transcripcion = [...room.turns.values()].sort((a, b) => a.sequence - b.sequence).map(t => t.text).join('\n').slice(-12000);
-        room.analyzedRevision = revision;
-        emit(room, { type: 'agent.status', status: 'analyzing' });
+        room[processed] = revision;
         const incident = { consentimiento_analisis: true, transcripcion };
-        await Promise.allSettled([
-          (async () => {
-            try {
-              const result = await (config.detect ?? detectAlert)(incident, { ...ai, model: process.env.OPENAI_DECISION_MODEL ?? 'gpt-6-luna', threshold });
-              if (room.closed || revision !== room.revision) return;
-              room.lastDecision = result;
-              emit(room, { type: 'alert.updated', alerta: result.alerta, probability: result.probabilidad, threshold, revision, provisional: true });
-              emit(room, { type: 'risk.update', risk_percent: Math.round(result.probabilidad * 100), reasons: ['Estimación provisional de necesidad de alerta; no confirma una estafa.'], scam_type: null, impersonating: null, score_kind: 'probabilidad_de_alerta_no_calibrada', alerta: result.alerta, revision });
-              emit(room, { type: 'agent.status', status: result.alerta ? 'suspicious' : 'screening' });
-            } catch { if (!room.closed && revision === room.revision) emit(room, { type: 'error', message: 'Detección no disponible. No interpretes este fallo como ausencia de riesgo.', component: 'deteccion' }); }
-          })(),
-          (async () => {
-            try {
-              const analysis = await (config.understand ?? understandIncident)(incident, ai);
-              if (!room.closed && revision === room.revision) emit(room, { type: 'understanding.update', analysis, revision });
-            } catch { if (!room.closed && revision === room.revision) emit(room, { type: 'error', message: 'Comprensión no disponible; la detección se procesa de forma independiente.', component: 'comprension' }); }
-          })(),
-        ]);
+        if (component === 'detect') emit(room, { type: 'agent.status', status: 'analyzing' });
+        try {
+          if (component === 'detect') {
+            const result = await (config.detect ?? detectAlert)(incident, { ...ai, model: process.env.OPENAI_DECISION_MODEL ?? 'gpt-6-luna', threshold });
+            if (room.closed || revision !== room.revision) continue;
+            room.lastDecision = result;
+            emit(room, { type: 'alert.updated', alerta: result.alerta, probability: result.probabilidad, threshold, revision, provisional: true });
+            emit(room, { type: 'risk.update', risk_percent: Math.round(result.probabilidad * 100), reasons: ['Estimación provisional de necesidad de alerta; no confirma una estafa.'], scam_type: null, impersonating: null, score_kind: 'probabilidad_de_alerta_no_calibrada', alerta: result.alerta, revision });
+            emit(room, { type: 'agent.status', status: result.alerta ? 'suspicious' : 'screening' });
+          } else {
+            const analysis = await (config.understand ?? understandIncident)(incident, ai);
+            if (!room.closed && revision === room.revision) emit(room, { type: 'understanding.update', analysis, revision });
+          }
+        } catch {
+          if (!room.closed && revision === room.revision) emit(room, { type: 'error', message: component === 'detect' ? 'Detección no disponible. No interpretes este fallo como ausencia de riesgo.' : 'Comprensión no disponible; la detección se procesa de forma independiente.', component: component === 'detect' ? 'deteccion' : 'comprension' });
+        }
       }
-    } finally { room.analyzing = false; }
+    } finally { room[running] = false; }
   }
   function ingestTranscript(room, event) {
     if (room.closed) return;
@@ -88,7 +86,8 @@ export async function createVoiceServer(config = {}) {
     if (final) {
       room.turns.set(event.id, { text: event.text, sequence: Number.isSafeInteger(event.sequence) && event.sequence >= 0 ? event.sequence : room.turns.size });
       room.revision++;
-      void analyze(room);
+      void analyze(room, 'detect');
+      void analyze(room, 'understand');
     }
   }
   async function body(req, max = 131072) {
@@ -125,7 +124,7 @@ export async function createVoiceServer(config = {}) {
         if (input.consentimiento_analisis !== true) throw statusError('Se requiere consentimiento de análisis', 400);
         if (!apiKey) throw statusError('Falta acceso al modelo en el servidor', 503);
         if (rooms.size >= maxSessions) throw statusError('Hay sesiones activas; termina una antes de continuar', 429);
-        const room = { id: randomUUID(), producer: token(), observer: token(), clients: new Set(), transcripts: new Map(), turns: new Map(), revision: 0, analyzedRevision: 0, analyzing: false, closed: false, started: Date.now(), callId: null };
+        const room = { id: randomUUID(), producer: token(), observer: token(), clients: new Set(), transcripts: new Map(), turns: new Map(), revision: 0, detectRevision: 0, understandRevision: 0, closed: false, started: Date.now(), callId: null };
         rooms.set(room.id, room);
         room.expiry = setTimeout(() => void endRoom(room, 'expired'), sessionMs).unref();
         return send(201, { session_id: room.id, producer_token: room.producer, observer_token: room.observer, expires_at: new Date(Date.now() + sessionMs).toISOString(), events_path: `/ws/calls?session=${room.id}&ticket=${room.observer}` });
