@@ -3,7 +3,7 @@ export async function connectVoice({ stream, accessCode, consentimiento, baseUrl
   baseUrl = baseUrl.replace(/\/$/, '');
   if (consentimiento !== true) throw new Error('Confirma la autorización de análisis.');
   const request = async (path, body, secret = accessCode) => {
-    const r = await fetch(`${baseUrl}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` }, body: JSON.stringify(body) });
+    const r = await fetch(`${baseUrl}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Voice-Token': secret }, body: JSON.stringify(body) });
     const data = await r.json(); if (!r.ok) throw new Error(data.error ?? `HTTP ${r.status}`); return data;
   };
   const room = await request('/v1/sessions', { consentimiento_analisis: true });

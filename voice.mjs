@@ -8,6 +8,8 @@ import { understandIncident } from './understanding.mjs';
 const token = () => randomBytes(24).toString('base64url');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 const statusError = (message, statusCode) => Object.assign(new Error(message), { statusCode });
+// El proxy público de Maritime reserva Authorization para su propia autenticación.
+const appToken = req => req.headers['x-voice-token'] ?? req.headers.authorization?.replace(/^Bearer /, '');
 
 export async function createVoiceServer(config = {}) {
   const apiKey = config.apiKey ?? process.env.OPENAI_API_KEY;
@@ -99,7 +101,7 @@ export async function createVoiceServer(config = {}) {
     const room = rooms.get(id);
     if (room && Date.now() >= room.started + sessionMs) void endRoom(room, 'expired');
     if (!room || room.closed) throw statusError('Sesión inexistente o vencida', 404);
-    if (!equal(req.headers.authorization?.replace(/^Bearer /, ''), room.producer)) throw statusError('Acceso no autorizado', 401);
+    if (!equal(appToken(req), room.producer)) throw statusError('Acceso no autorizado', 401);
     return room;
   }
   const server = http.createServer(async (req, res) => {
@@ -120,7 +122,7 @@ export async function createVoiceServer(config = {}) {
         if (now > rate.until) { rate.count = 0; rate.until = now + 60000; }
         attempts.set(ip, rate);
         if (++rate.count > 10) throw statusError('Demasiados intentos; espera un minuto', 429);
-        if (!equal(req.headers.authorization?.replace(/^Bearer /, ''), accessCode)) throw statusError('Código de acceso incorrecto', 401);
+        if (!equal(appToken(req), accessCode)) throw statusError('Código de acceso incorrecto', 401);
         const input = await body(req);
         if (input.consentimiento_analisis !== true) throw statusError('Se requiere consentimiento de análisis', 400);
         if (!apiKey) throw statusError('Falta acceso al modelo en el servidor', 503);

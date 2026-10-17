@@ -5,13 +5,13 @@
 ## Flujo
 
 1. El navegador/intermediario obtiene un `MediaStream` autorizado: micrófono, archivo de prueba o pista recibida por otro WebRTC.
-2. `POST /v1/sessions` con `Authorization: Bearer <VOICE_ACCESS_CODE>` y `{"consentimiento_analisis":true}` devuelve una sala, un ticket de productor y otro de observador. La duración máxima es de 15 minutos, con dos sesiones simultáneas.
+2. `POST /v1/sessions` con `X-Voice-Token: <VOICE_ACCESS_CODE>` y `{"consentimiento_analisis":true}` devuelve una sala, un ticket de productor y otro de observador. La duración máxima es de 15 minutos, con dos sesiones simultáneas.
 3. El productor conecta `/ws/calls?session=<id>&ticket=<producer_token>`.
-4. Crea un `RTCPeerConnection`, añade la pista de audio y crea un DataChannel. Envía su oferta SDP a `POST /v1/sessions/<id>/offer`, autenticado con el ticket de productor. Recibe el SDP de respuesta.
+4. Crea un `RTCPeerConnection`, añade la pista de audio y crea un DataChannel. Envía su oferta SDP a `POST /v1/sessions/<id>/offer`, autenticado con `X-Voice-Token: <producer_token>`. Recibe el SDP de respuesta.
 5. La negociación y la credencial de Maritime permanecen en el servidor. Los paquetes de audio WebRTC viajan desde el cliente al proveedor OpenAI; la VM no retransmite ese audio. El modelo `gpt-live-transcribe` devuelve fragmentos por DataChannel. El cliente detecta pausas y realiza `input_audio_buffer.commit`.
 6. El productor reenvía eventos `transcript.update` al servidor. Los finales disparan GPT Decisions (`gpt-6-luna`) y comprensión (`gpt-4.1-mini`) con el contexto acumulado. Los parciales solo se muestran. Las revisiones obsoletas y finales duplicados se descartan.
 7. `alert.updated` contiene `alerta: true|false`, `probability`, `threshold`, `revision` y `provisional:true`. `understanding.update` contiene hechos, inferencias y citas literales. Un fallo del modelo produce `error`, nunca un FALSE de sustitución.
-8. Terminar: `POST /v1/sessions/<id>/end` con el ticket del productor; cierra también la llamada del proveedor. Desconectar al productor concede cinco segundos para reconectar y después termina la sesión.
+8. Terminar: `POST /v1/sessions/<id>/end` con `X-Voice-Token: <producer_token>`; cierra también la llamada del proveedor. Desconectar al productor concede cinco segundos para reconectar y después termina la sesión.
 
 El módulo `/voice-client.js` exporta `connectVoice({stream, accessCode, consentimiento:true, baseUrl, onEvent})`, que devuelve `{stop, peerConnection, sessionId}`. Es la integración mínima para un intermediario web propio. Sirve el cliente en el mismo origen; no se habilita CORS público. Para un intermediario de otro origen, utiliza su backend de confianza para crear y negociar la sesión o implementa una política explícita de orígenes permitidos. Nunca distribuyas la clave del proveedor ni el código maestro dentro de una app publicada: tu backend debe emitir tickets limitados por sesión.
 
@@ -45,3 +45,5 @@ Referencia de WebRTC: https://developers.openai.com/api/docs/guides/voice-webrtc
 Si el constructor de ZIP queda bloqueado, `node scripts/preparar-runtime.mjs` empaqueta únicamente el código del servicio, sus recursos y la dependencia `ws` instalada por `npm ci`. No incluye `.env`, `.maritime`, audios ni el repositorio móvil. Genera variables en `.maritime/runtime-env.json`; el servicio puede arrancar con una imagen oficial e inmutable de Node usando `NODE_OPTIONS=--import=...`. El código comprimido se almacena como variable secreta de Maritime y se reconstruye en `/data/voice-runtime-<sha256>` al arrancar. No se publica una imagen con código privado en un registro público.
 
 El Dockerfile sigue disponible para despliegues convencionales. Para actualizar el arranque alternativo, vuelve a generar el paquete, importa sus tres variables como secretos y reinicia la VM; no hace falta crear otra máquina. No publiques el archivo de variables ni lo mezcles con el código de acceso. Al ejecutar comandos Node de diagnóstico dentro de la VM, usa `env -u NODE_OPTIONS node ...` para evitar iniciar accidentalmente otra copia del servidor.
+
+El proxy público de Maritime reserva/elimina `Authorization`. Por eso la API del canal usa `X-Voice-Token`. El servidor también acepta Bearer en conexiones directas de desarrollo, pero el SDK utiliza el encabezado propio en todas las solicitudes del canal.
