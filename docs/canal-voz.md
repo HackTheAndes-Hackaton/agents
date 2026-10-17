@@ -49,3 +49,5 @@ El Dockerfile sigue disponible para despliegues convencionales. Para actualizar 
 El proxy público de Maritime reserva/elimina `Authorization`. Por eso la API del canal usa `X-Voice-Token`. El servidor también acepta Bearer en conexiones directas de desarrollo, pero el SDK utiliza el encabezado propio en todas las solicitudes del canal.
 
 Los fragmentos finales se ordenan y unen con un espacio antes de analizarlos, evitando introducir saltos artificiales dentro de una misma frase. Las citas se validan literalmente contra ese texto; no se aceptan citas reconstruidas por el modelo. El SDK normaliza respuestas SDP que un proxy haya serializado como una cadena JSON.
+
+El detector de pausas del cliente no realiza cortes forzados mientras hay voz. Tras seis segundos admite una pausa breve; de lo contrario espera el final de voz. La transcripción parcial sigue siendo visible, pero los agentes analizan fragmentos cerrados. Por eso la latencia de una alerta depende de las pausas y de los modelos; no se promete una duración fija ni precisión validada para ruido o telefonía.

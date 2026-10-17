@@ -69,10 +69,11 @@ export async function connectVoice({ stream, accessCode, consentimiento, baseUrl
       onEvent({ type: 'audio.level', level: Math.min(1, rms * 12) });
       const now = performance.now();
       if (rms > 0.012) { if (!pendingAudio) turnStart = now; pendingAudio = true; lastSpeech = now; }
-      if (pendingAudio && now - turnStart > 400 && (now - lastSpeech > 600 || now - turnStart > 6000) && dc.readyState === 'open') {
+      // Tras 6 s acepta una pausa breve; nunca corta mientras llega voz.
+      if (pendingAudio && now - turnStart > 400 && (now - lastSpeech > 600 || (now - turnStart > 6000 && now - lastSpeech > 180)) && dc.readyState === 'open') {
         dc.send(JSON.stringify({ type: 'input_audio_buffer.commit' })); pendingAudio = false;
       }
-    }, 100);
+    }, 50);
     const observerUrl = new URL(baseUrl + room.events_path); observerUrl.protocol = eventUrl.protocol;
     onEvent({ type: 'client.connected', observer_url: observerUrl.href, expires_at: room.expires_at });
     return { stop, peerConnection: pc, sessionId: room.session_id };
