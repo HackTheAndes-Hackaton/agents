@@ -88,7 +88,7 @@ export async function createVoiceServer(config = {}) {
     }
     const final = event.final === true;
     if (room.turns.has(event.id)) return; // Un final es inmutable: evita reenvíos y cobros repetidos.
-    emit(room, { type: 'transcript.update', id: event.id, speaker: ['caller', 'user', 'agent'].includes(event.speaker) ? event.speaker : 'caller', text: event.text, flagged: false, final, source: 'webrtc_client_transcription' });
+    emit(room, { type: 'transcript.update', id: event.id, speaker: ['caller', 'user', 'agent'].includes(event.speaker) ? event.speaker : 'caller', text: event.text, sequence: Number.isSafeInteger(event.sequence) && event.sequence >= 0 && event.sequence <= 2147483647 ? event.sequence : undefined, flagged: false, final, source: 'webrtc_client_transcription' });
     if (final) {
       room.turns.set(event.id, { text: event.text, sequence: Number.isSafeInteger(event.sequence) && event.sequence >= 0 ? event.sequence : room.turns.size });
       room.revision++;

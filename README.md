@@ -2,7 +2,7 @@
 
 Prototipo en español basado en el resumen de HackTheAndes:
 
-1. **andes-comprension** organiza la transcripción autorizada: resumen, solicitudes, hechos, citas e incertidumbres.
+1. **andes-comprension** organiza citas literales de la transcripción autorizada y categorías para revisar, sin atribuir identidades ni hablantes.
 2. **andes-deteccion** evalúa la transcripción original con `gpt-6-luna` mediante OpenAI Decisions y devuelve `true` o `false` para una alerta preventiva. El análisis previo no se utiliza como evidencia para el detector.
 
 Cada agente usa el mismo servidor y un valor distinto de `AGENT_ROLE`. Comprensión conserva `gpt-4.1-mini` y sus citas se comprueban contra la transcripción. Detección recibe una probabilidad tipada, no texto generado, y el código la convierte en booleano. El resultado es provisional y requiere revisión humana.
@@ -35,7 +35,7 @@ El flujo duerme Comprensión antes de llamar a Detección porque el plan gratuit
 
 **andes-voz:** https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755
 
-Abre la página HTTPS, introduce el código privado del equipo, confirma la autorización y conecta un micrófono o un archivo de prueba. La página muestra transcripción, alerta booleana y comprensión. El código se encuentra localmente en `.maritime/voice-access.json`, excluido de Git. Al conectar, la sección «Conectar el observador de Tiskz» entrega la URL WebSocket temporal para Settings → WebSocket URL de la app Android; desactiva Demo Mode. No distribuyas el código maestro en una aplicación publicada.
+Abre la página HTTPS, introduce el código privado del equipo, confirma la autorización y conecta un micrófono o un archivo de prueba. La página muestra transcripción, alerta booleana y comprensión. El código se encuentra localmente en `.maritime/voice-access.json`, excluido de Git. En Android también se puede abrir Inicio → Abrir canal de voz, con captura nativa a 48 kHz y creación automática de su sala. El modo demo de llamadas es independiente. La página web conserva la opción de conectar un observador temporal. No distribuyas el código maestro en una aplicación publicada.
 
 El módulo `web/voice-client.js` también recibe un `MediaStream` existente mediante `connectVoice`, para integrarlo con otro intermediario WebRTC. Consulta [el contrato de integración](docs/canal-voz.md). El servicio reúne los dos agentes lógicos en una VM; las otras dos máquinas pueden permanecer dormidas. La transcripción y la inferencia consumen créditos de IA.
 

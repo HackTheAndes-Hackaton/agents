@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { detectAlert, parseThreshold } from './decisions.mjs';
 import { createVoiceServer } from './voice.mjs';
+import { groundUnderstanding } from './understanding.mjs';
 
 export async function createAgentServer(config = {}) {
   const dataDir = config.dataDir ?? process.env.DATA_DIR ?? '/data';
@@ -87,18 +88,14 @@ export async function createAgentServer(config = {}) {
       const result = await upstream.json();
       const reply = result.choices?.[0]?.message?.content;
       if (typeof reply !== 'string' || !reply.trim()) throw new Error('El modelo no devolvió texto');
-      const analysis = JSON.parse(reply);
-      if (analysis.rol !== role || !Array.isArray(analysis.evidencias) || !Array.isArray(analysis.limitaciones)) throw new Error('Respuesta estructurada inválida');
-      for (const evidence of analysis.evidencias) {
-        if (typeof evidence.cita !== 'string' || !evidence.cita.trim() || !incident.transcripcion.includes(evidence.cita)) throw new Error('Cita sin respaldo');
-      }
-      const nextHistory = [...history, { role: 'user', content: body.message.trim() }, { role: 'assistant', content: reply }].slice(-20);
+      const groundedReply = JSON.stringify(groundUnderstanding(JSON.parse(reply), incident.transcripcion));
+      const nextHistory = [...history, { role: 'user', content: body.message.trim() }, { role: 'assistant', content: groundedReply }].slice(-20);
       if (persistHistory) {
         await writeFile(`${historyPath}.tmp`, JSON.stringify(nextHistory), { mode: 0o600 });
         await rename(`${historyPath}.tmp`, historyPath);
       }
       console.log(JSON.stringify({ event: 'chat_completed', model }));
-      send(200, { response: reply, conversationId });
+      send(200, { response: groundedReply, conversationId });
     } catch (error) {
       const timedOut = error.name === 'TimeoutError' || error.name === 'AbortError';
       console.error(JSON.stringify({ event: 'chat_failed', type: error.name }));

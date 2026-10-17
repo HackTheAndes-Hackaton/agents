@@ -106,3 +106,12 @@ test('Voz: acepta SDP serializado por un proxy y evita renegociar sin Location',
   const r = await f.post(path, input, room.producer_token); assert.equal(r.status, 201); assert.ok((await r.json()).sdp.startsWith('v='));
   assert.equal((await f.post(path, input, room.producer_token)).status, 409);
 });
+
+test('Voz: retransmite la secuencia de turnos aunque lleguen finales invertidos', async t => {
+  const f = await fixture(t); const room = await f.create(), p = await f.connect(room);
+  p.ws.send(JSON.stringify({ type: 'transcript.update', id: 'second', text: 'Ni datos personales.', sequence: 1, final: true }));
+  p.ws.send(JSON.stringify({ type: 'transcript.update', id: 'first', text: 'No necesito pagos.', sequence: 0, final: true }));
+  await until(() => p.events.filter(e => e.type === 'transcript.update').length === 2);
+  const lines = p.events.filter(e => e.type === 'transcript.update');
+  assert.deepEqual(lines.map(e => [e.id, e.sequence]), [['second', 1], ['first', 0]]);
+});
