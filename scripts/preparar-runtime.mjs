@@ -13,7 +13,7 @@ async function collect(path) {
     else if (e.isFile()) files[name] = (await readFile(name)).toString('utf8');
   }
 }
-for (const path of ['voice.mjs', 'live-voice.mjs', 'decisions.mjs', 'understanding.mjs', 'package.json']) files[path] = (await readFile(path)).toString('utf8');
+for (const path of ['voice.mjs', 'live-voice.mjs', 'phone-bridge.mjs', 'decisions.mjs', 'understanding.mjs', 'package.json']) files[path] = (await readFile(path)).toString('utf8');
 for (const path of ['prompts', 'web', 'node_modules/ws']) await collect(path);
 // Mantiene el arranque bajo el límite de env de la VM sin eliminar validaciones.
 for (const name of Object.keys(files)) if (/\.m?js$/.test(name)) files[name] = transformSync(files[name], { minify: true, legalComments: 'inline', target: 'es2022' }).code;

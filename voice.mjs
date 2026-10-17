@@ -5,6 +5,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { detectAlert, parseThreshold } from './decisions.mjs';
 import { understandIncident } from './understanding.mjs';
 import { LiveCaptions, liveSessionConfig, liveAnalysisContext } from './live-voice.mjs';
+import { createPhoneBridge } from './phone-bridge.mjs';
 
 const token = () => randomBytes(24).toString('base64url');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -24,6 +25,7 @@ export async function createVoiceServer(config = {}) {
   const attempts = new Map();
   const files = new Map(await Promise.all(['index.html', 'voice-client.js', 'style.css'].map(async name => [name, await readFile(new URL(`./web/${name}`, import.meta.url))])));
   const ai = { baseUrl, apiKey, timeoutMs: config.timeoutMs ?? 20000 };
+  const phone = createPhoneBridge({ accessCode, ai: { ...ai, threshold }, secret: config.vapiSecret ?? process.env.VAPI_WEBHOOK_SECRET, assistantId: config.vapiAssistantId ?? process.env.VAPI_ASSISTANT_ID, number: process.env.VAPI_PHONE_NUMBER, detect: config.detect, understand: config.understand, analysisMs: config.phoneAnalysisMs });
   const emit = (room, event) => {
     const payload = { ...event, session_id: room.id, timestamp: new Date().toISOString() };
     if (event.type === 'transcript.update' && event.id) room.transcripts.set(event.id, payload);
@@ -149,6 +151,7 @@ export async function createVoiceServer(config = {}) {
     const send = (status, data) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(data)); };
     try {
       const url = new URL(req.url, 'http://localhost');
+      if (await phone.http(req, res, url.pathname)) return;
       if (req.method === 'GET' && url.pathname === '/health') return send(200, { ok: true, role: 'voz', webrtc: true, models: { transcription: 'gpt-live-transcribe', understanding: 'gpt-4.1-mini', detection: 'gpt-6-luna', assistant: 'gpt-live-1', voice: 'marin' }, configured: Boolean(apiKey) });
       const staticName = url.searchParams.get('asset') ?? (url.pathname === '/' ? 'index.html' : url.pathname.slice(1));
       if (req.method === 'GET' && files.has(staticName)) {
@@ -218,6 +221,7 @@ export async function createVoiceServer(config = {}) {
   server.on('upgrade', (req, socket, head) => {
     let url;
     try { url = new URL(req.url, 'http://localhost'); } catch { socket.destroy(); return; }
+    if (phone.upgrade(req, socket, head, url.pathname)) return;
     const room = rooms.get(url.searchParams.get('session'));
     if (room && Date.now() >= room.started + sessionMs) void endRoom(room, 'expired');
     const ticket = url.searchParams.get('ticket');
@@ -250,6 +254,6 @@ export async function createVoiceServer(config = {}) {
       client.on('error', () => client.close());
     });
   });
-  server.closeVoice = async () => { await Promise.all([...rooms.values()].map(room => endRoom(room, 'server_closing'))); wss.close(); };
+  server.closeVoice = async () => { phone.close(); await Promise.all([...rooms.values()].map(room => endRoom(room, 'server_closing'))); wss.close(); };
   return server;
 }
