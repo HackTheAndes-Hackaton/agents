@@ -97,3 +97,12 @@ test('Voz: la comprensión lenta no bloquea nuevas detecciones', async t => {
   await until(() => p.events.some(e => e.type === 'alert.updated' && e.revision === 2));
   assert.equal(detections, 2); assert.ok(!p.events.some(e => e.type === 'understanding.update')); release();
 });
+
+test('Voz: acepta SDP serializado por un proxy y evita renegociar sin Location', async t => {
+  const provider = http.createServer((req, res) => { res.writeHead(201, { 'Content-Type': 'application/json' }); res.end(JSON.stringify('v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n')); });
+  provider.listen(0, '127.0.0.1'); await once(provider, 'listening'); t.after(() => new Promise(r => provider.close(r)));
+  const f = await fixture(t, { baseUrl: `http://127.0.0.1:${provider.address().port}/v1` }); const room = await f.create();
+  const path = `/v1/sessions/${room.session_id}/offer`, input = { sdp: 'v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n' };
+  const r = await f.post(path, input, room.producer_token); assert.equal(r.status, 201); assert.ok((await r.json()).sdp.startsWith('v='));
+  assert.equal((await f.post(path, input, room.producer_token)).status, 409);
+});

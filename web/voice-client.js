@@ -3,7 +3,7 @@ export async function connectVoice({ stream, accessCode, consentimiento, baseUrl
   baseUrl = baseUrl.replace(/\/$/, '');
   if (consentimiento !== true) throw new Error('Confirma la autorización de análisis.');
   const request = async (path, body, secret = accessCode) => {
-    const r = await fetch(`${baseUrl}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Voice-Token': secret }, body: JSON.stringify(body) });
+    const r = await fetch(`${baseUrl}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Voice-Token': secret }, body: JSON.stringify(body), signal: AbortSignal.timeout(25000) });
     const data = await r.json(); if (!r.ok) throw new Error(data.error ?? `HTTP ${r.status}`); return data;
   };
   const room = await request('/v1/sessions', { consentimiento_analisis: true });
@@ -17,8 +17,9 @@ export async function connectVoice({ stream, accessCode, consentimiento, baseUrl
   const send = event => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(event)); };
   const stop = async () => {
     if (stopped) return; stopped = true; clearInterval(timer); clearInterval(heartbeat);
-    try { await request(`/v1/sessions/${room.session_id}/end`, {}, room.producer_token); } catch { /* La sesión puede haber terminado desde Tiskz. */ }
+    // Corta el audio incluso si la red no permite completar la solicitud de cierre.
     dc?.close(); pc.close(); ws.close(); stream.getTracks().forEach(t => t.stop());
+    try { await request(`/v1/sessions/${room.session_id}/end`, {}, room.producer_token); } catch { /* La sesión puede haber terminado desde Tiskz. */ }
     await context?.close(); onEvent({ type: 'client.stopped' });
   };
   try {

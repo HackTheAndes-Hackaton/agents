@@ -55,7 +55,7 @@ export async function createVoiceServer(config = {}) {
     try {
       while (!room.closed && room[processed] !== room.revision) {
         const revision = room.revision;
-        const transcripcion = [...room.turns.values()].sort((a, b) => a.sequence - b.sequence).map(t => t.text).join('\n').slice(-12000);
+        const transcripcion = [...room.turns.values()].sort((a, b) => a.sequence - b.sequence).map(t => t.text).join(' ').slice(-12000);
         room[processed] = revision;
         const incident = { consentimiento_analisis: true, transcripcion };
         if (component === 'detect') emit(room, { type: 'agent.status', status: 'analyzing' });
@@ -81,7 +81,11 @@ export async function createVoiceServer(config = {}) {
     if (room.closed) return;
     if (typeof event.id !== 'string' || !event.id || event.id.length > 150 || typeof event.text !== 'string' || event.text.length > 4000) return;
     if (!event.text.trim()) return;
-    if (!room.transcripts.has(event.id) && room.transcripts.size >= 100) return;
+    if (!room.transcripts.has(event.id) && room.transcripts.size >= 100) {
+      emit(room, { type: 'error', message: 'Se alcanzó el límite de 100 fragmentos. Inicia otra sesión.' });
+      void endRoom(room, 'turn_limit');
+      return;
+    }
     const final = event.final === true;
     if (room.turns.has(event.id)) return; // Un final es inmutable: evita reenvíos y cobros repetidos.
     emit(room, { type: 'transcript.update', id: event.id, speaker: ['caller', 'user', 'agent'].includes(event.speaker) ? event.speaker : 'caller', text: event.text, flagged: false, final, source: 'webrtc_client_transcription' });
@@ -138,7 +142,7 @@ export async function createVoiceServer(config = {}) {
         if (match[2] === 'end') { await endRoom(room); return send(200, { ok: true }); }
         const input = await body(req);
         if (typeof input.sdp !== 'string' || input.sdp.length > 100000 || !input.sdp.includes('m=audio')) throw statusError('Se requiere una oferta SDP con audio', 400);
-        if (room.offerInProgress || room.callId) throw statusError('La sesión ya negoció su canal de audio', 409);
+        if (room.offerInProgress || room.negotiated) throw statusError('La sesión ya negoció su canal de audio', 409);
         room.offerInProgress = true;
         try {
           const form = new FormData();
@@ -146,10 +150,13 @@ export async function createVoiceServer(config = {}) {
           form.set('session', JSON.stringify({ type: 'transcription', audio: { input: { transcription: { model: 'gpt-live-transcribe', languages: ['es'], delay: 'low' }, turn_detection: null } } }));
           const upstream = await fetch(`${baseUrl}/realtime/calls`, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}` }, body: form, signal: AbortSignal.timeout(20000) });
           if (!upstream.ok) { console.error(JSON.stringify({ event: 'webrtc_offer_failed', status: upstream.status })); throw statusError('No se pudo negociar el audio con el transcriptor', 502); }
-          const sdp = await upstream.text();
+          let sdp = await upstream.text();
+          // Algunos proxies JSON serializan también las respuestas de texto/SDP.
+          if (sdp.trim().startsWith('"')) { try { sdp = JSON.parse(sdp); } catch { /* Valida debajo. */ } }
           const location = upstream.headers.get('location');
           if (location) room.callId = new URL(location, 'https://api.openai.com').pathname.split('/').filter(Boolean).at(-1);
-          if (!room.callId || !sdp.startsWith('v=')) throw statusError('Respuesta SDP incompleta del proveedor', 502);
+          if (typeof sdp !== 'string' || !sdp.startsWith('v=')) throw statusError('Respuesta SDP incompleta del proveedor', 502);
+          room.negotiated = true;
           if (room.closed) { await hangup(room.callId); throw statusError('Sesión terminada durante la negociación', 409); }
           emit(room, { type: 'agent.status', status: 'screening' });
           return send(201, { sdp, session_id: room.id });
@@ -178,7 +185,7 @@ export async function createVoiceServer(config = {}) {
         let event; try { event = JSON.parse(raw.toString()); } catch { return; }
         if (!event || typeof event !== 'object' || Array.isArray(event)) return;
         if (event.type === 'ping') { client.send(JSON.stringify({ type: 'pong' })); return; }
-        if (event.type === 'session.start') { client.send(JSON.stringify({ type: 'agent.status', status: room.callId ? 'screening' : 'connecting' })); return; }
+        if (event.type === 'session.start') { client.send(JSON.stringify({ type: 'agent.status', status: room.negotiated ? 'screening' : 'connecting' })); return; }
         if (event.type === 'transcript.update' && producer) ingestTranscript(room, event);
         if (event.type === 'user.decision') {
           if (!['answer', 'reject', 'hang_up', 'block', 'not_scam'].includes(event.action)) return;
