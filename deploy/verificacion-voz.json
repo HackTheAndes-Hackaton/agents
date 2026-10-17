@@ -1,0 +1,67 @@
+{
+  "verificado_en": "2026-10-17T19:54:00.717122+00:00",
+  "nombre": "andes-voz",
+  "id": "ebf0eb81-42c0-4437-a044-1af84af1b755",
+  "url": "https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755",
+  "estado": "active",
+  "codigo_del_servicio": "0203481",
+  "runtime_sha256": "09409498a91f4e993be80c98446a036e85fe898956e7c9939da0f954ee5db34e",
+  "modelos": {
+    "transcription": "gpt-live-transcribe",
+    "understanding": "gpt-4.1-mini",
+    "detection": "gpt-6-luna"
+  },
+  "health": {
+    "ok": true,
+    "role": "voz",
+    "webrtc": true,
+    "models": {
+      "transcription": "gpt-live-transcribe",
+      "understanding": "gpt-4.1-mini",
+      "detection": "gpt-6-luna"
+    },
+    "configured": true
+  },
+  "chat_comprobado": true,
+  "websocket_publico_comprobado": true,
+  "observador_externo_recibio": [
+    "session.ready",
+    "transcript.update",
+    "risk.update",
+    "understanding.update"
+  ],
+  "pruebas_unitarias_pasadas": 16,
+  "pruebas_de_audio": [
+    {
+      "escenario": "riesgo",
+      "fuente": "audio sintetico en español, voz Paulina de macOS",
+      "transporte": "WebRTC real desde el navegador",
+      "alerta_esperada": true,
+      "alerta_obtenida": true,
+      "comprension": "analizado",
+      "citas_literales_verificadas": true,
+      "negacion_preservada": null
+    },
+    {
+      "escenario": "legitimo",
+      "fuente": "audio sintetico en español, voz Paulina de macOS",
+      "transporte": "WebRTC real desde el navegador",
+      "alerta_esperada": false,
+      "alerta_obtenida": false,
+      "comprension": "analizado",
+      "citas_literales_verificadas": true,
+      "negacion_preservada": true
+    }
+  ],
+  "sesiones_de_prueba_cerradas": true,
+  "alojamiento_reportado_centavos": 0,
+  "ia_total_cuenta_reportada_centavos": 1.341,
+  "consumo_reportado_hasta": "2026-10-17T19:53:42.139371Z",
+  "limites": [
+    "Las pruebas con dos audios sintéticos no establecen precisión general ni calibración.",
+    "Se analiza texto, no tono ni identidad de voces.",
+    "El cliente Android no se modificó ni se ejecutó; se verificó su contrato WebSocket con un observador independiente.",
+    "Los agentes analizan fragmentos cerrados por pausas; la latencia depende de la voz y del proveedor.",
+    "El cierre del proveedor usa hangup si hay Location; de lo contrario depende del cierre WebRTC del productor."
+  ]
+}

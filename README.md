@@ -31,6 +31,14 @@ maritime status andes-deteccion --json
 
 El flujo duerme Comprensión antes de llamar a Detección porque el plan gratuito permite una máquina despierta a la vez.
 
+## Canal de voz desplegado
+
+**andes-voz:** https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755
+
+Abre la página HTTPS, introduce el código privado del equipo, confirma la autorización y conecta un micrófono o un archivo de prueba. La página muestra transcripción, alerta booleana y comprensión. El código se encuentra localmente en `.maritime/voice-access.json`, excluido de Git. Al conectar, la sección «Conectar el observador de Tiskz» entrega la URL WebSocket temporal para Settings → WebSocket URL de la app Android; desactiva Demo Mode. No distribuyas el código maestro en una aplicación publicada.
+
+El módulo `web/voice-client.js` también recibe un `MediaStream` existente mediante `connectVoice`, para integrarlo con otro intermediario WebRTC. Consulta [el contrato de integración](docs/canal-voz.md). El servicio reúne los dos agentes lógicos en una VM; las otras dos máquinas pueden permanecer dormidas. La transcripción y la inferencia consumen créditos de IA.
+
 ## Configuración
 
 - `AGENT_ROLE`: `comprension`, `deteccion` o `voz` (canal WebRTC).

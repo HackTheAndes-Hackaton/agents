@@ -28,6 +28,28 @@
       "codigo_desplegado": "450552f",
       "modelo_actual": "gpt-6-luna",
       "endpoint_modelo": "/decisions"
+    },
+    {
+      "nombre": "andes-voz",
+      "id": "ebf0eb81-42c0-4437-a044-1af84af1b755",
+      "projectId": "d79f996e-6181-42f9-8537-9fc1f0cfd224",
+      "url_publica": "https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755",
+      "variables": {
+        "AGENT_ROLE": "voz",
+        "PERSIST_HISTORY": "false",
+        "ALERT_THRESHOLD": "0.5"
+      },
+      "codigo_desplegado": "0203481",
+      "runtime_sha256": "09409498a91f4e993be80c98446a036e85fe898956e7c9939da0f954ee5db34e",
+      "imagen": "docker.io/library/node:24-bookworm-slim@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5",
+      "puerto": 18789,
+      "arquitectura": "WebRTC al transcriptor; dos agentes lógicos en la misma VM; eventos WebSocket compatibles con Tiskz",
+      "modelos": {
+        "transcripcion": "gpt-live-transcribe",
+        "comprension": "gpt-4.1-mini",
+        "deteccion": "gpt-6-luna"
+      },
+      "secreto_acceso": "VOICE_ACCESS_CODE, almacenado fuera de Git"
     }
   ]
 }
