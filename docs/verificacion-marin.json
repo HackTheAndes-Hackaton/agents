@@ -1,0 +1,151 @@
+{
+  "tested_at_utc": "2026-10-17T22:19:35.711427+00:00",
+  "synthetic_audio_only": true,
+  "physical_phone_tested_with_this_apk": false,
+  "backend_source_commit": "ff796d5dd95fcaca340a826fa2d56e5dd43e822b",
+  "android_source_commit": "44fda1af6dec8e666f26bba666b8615ced509d87",
+  "runtime_sha256": "1af72b34c73caec1614d274de481c95f8b406041fea13aa8bc8936cd46fb783e",
+  "apk_sha256": "732dc489e0dffc532bfcd65c15bd6ce064e26304085d95ce051becd034475460",
+  "backend_health": {
+    "ok": true,
+    "role": "voz",
+    "webrtc": true,
+    "models": {
+      "transcription": "gpt-live-transcribe",
+      "understanding": "gpt-4.1-mini",
+      "detection": "gpt-6-luna",
+      "assistant": "gpt-live-1",
+      "voice": "marin"
+    },
+    "configured": true
+  },
+  "models": {
+    "transcription": "gpt-live-transcribe",
+    "understanding": "gpt-4.1-mini",
+    "detection": "gpt-6-luna",
+    "assistant": "gpt-live-1",
+    "voice": "marin"
+  },
+  "checks": {
+    "node_tests_passed": 29,
+    "android_unit_tests_passed": 18,
+    "assemble_debug": "passed",
+    "assemble_android_test": "passed",
+    "lint_errors": 0,
+    "lint_warnings": 43,
+    "minified_runtime_smoke": "passed"
+  },
+  "cases": [
+    {
+      "scenario": "riesgo",
+      "passed": true,
+      "transport": "WebRTC aiortc contra backend desplegado",
+      "caller_transcript": " Transfiere mil soles ahora mismo o le haré daño a tu familia. No cortes la llamada No hables con nadie",
+      "assistant_transcript": " Hola, soy Tiskz, el asistente virtual. Entiendo; te escucho. Comprendo.",
+      "alert": true,
+      "revision": 3,
+      "understanding": {
+        "rol": "comprension",
+        "modo": "extractivo_sin_identidades_v1",
+        "estado": "analizado",
+        "resumen": "Fragmentos seleccionados para revisar: posibles amenazas, condiciones. Las citas conservan el texto recibido; no se atribuyen identidades ni hablantes.",
+        "participantes_mencionados": [],
+        "solicitudes": [],
+        "datos_observados": [
+          "Transfiere mil soles ahora mismo o le haré daño a tu familia.",
+          "No cortes la llamada No hables con nadie"
+        ],
+        "evidencias": [
+          {
+            "tipo": "amenaza",
+            "cita": "Transfiere mil soles ahora mismo o le haré daño a tu familia.",
+            "observacion": "Expresión seleccionada para revisar una posible amenaza; no confirma un delito."
+          },
+          {
+            "tipo": "condicion",
+            "cita": "No cortes la llamada No hables con nadie",
+            "observacion": "Fragmento seleccionado sobre una condición; debe revisarse en su contexto."
+          }
+        ],
+        "incertidumbres": [
+          "No se determina quién habla ni quién recibe una petición o amenaza.",
+          "Las palabras dudosas deben contrastarse con el audio; no se reconstruyen a partir de suposiciones."
+        ],
+        "limitaciones": [
+          "Identidades no verificadas ni atribuidas.",
+          "Posibles errores de transcripción; una cita literal no confirma que el audio diga lo mismo."
+        ]
+      },
+      "received_audio_nonzero_frames": 200,
+      "provider_close_confirmed": true,
+      "provider_usage_seconds": 15.0
+    },
+    {
+      "scenario": "legitimo",
+      "passed": true,
+      "transport": "WebRTC aiortc contra backend desplegado",
+      "caller_transcript": " Hola, soy Ana. Confirmamos la reunión de mañana a las 10. No necesito pagos ni datos personales. Gracias y hasta mañana",
+      "assistant_transcript": " Hola, soy el asistente virtual Tiskz. Entiendo, ajá, escuché la información.",
+      "alert": false,
+      "revision": 4,
+      "understanding": {
+        "rol": "comprension",
+        "modo": "extractivo_sin_identidades_v1",
+        "estado": "analizado",
+        "resumen": "Fragmentos seleccionados para revisar: negaciones. Las citas conservan el texto recibido; no se atribuyen identidades ni hablantes.",
+        "participantes_mencionados": [],
+        "solicitudes": [],
+        "datos_observados": [
+          "No necesito pagos ni datos personales."
+        ],
+        "evidencias": [
+          {
+            "tipo": "negacion",
+            "cita": "No necesito pagos ni datos personales.",
+            "observacion": "Negación seleccionada; se conserva su formulación literal."
+          }
+        ],
+        "incertidumbres": [
+          "No se determina quién habla ni quién recibe una petición o amenaza.",
+          "Las palabras dudosas deben contrastarse con el audio; no se reconstruyen a partir de suposiciones."
+        ],
+        "limitaciones": [
+          "Identidades no verificadas ni atribuidas.",
+          "Posibles errores de transcripción; una cita literal no confirma que el audio diga lo mismo."
+        ]
+      },
+      "received_audio_nonzero_frames": 212,
+      "provider_close_confirmed": true,
+      "provider_usage_seconds": 16.0
+    }
+  ],
+  "native_android": {
+    "complete": true,
+    "native_webrtc": true,
+    "model": "gpt-live-1",
+    "voice": "marin",
+    "cases": [
+      {
+        "scenario": "riesgo",
+        "alert": true,
+        "caller_transcript": " Transfiere mil soles ahora mismo o le haré daño a tu familia. No cortes la llamada. No hables con nadie",
+        "assistant_transcript": " Hola, soy Tiskz, el asistente virtual. ¿Cuál es el motivo de tu",
+        "received_audio_energy": 0.17845025625782446,
+        "legacy_commits": 0,
+        "understanding": "Fragmentos seleccionados para revisar: posibles amenazas, condiciones. Las citas conservan el texto recibido; no se atribuyen identidades ni hablantes.",
+        "mode": "extractivo_sin_identidades_v1",
+        "revision": 3,
+        "microphone_released": true,
+        "provider_close_confirmed": true
+      }
+    ]
+  },
+  "native_retest_note": "La repetición nativa del caso legítimo no se completó: instalación ADB excedió 70 s; el reintento fue interrumpido al cerrar el emulador. Ambos casos sí pasaron por WebRTC contra el backend final. El APK instalado se comprobó idéntico por SHA256.",
+  "limits": {
+    "pstn_call_forwarding_configured": false,
+    "zavu_receiving_number_verified": false,
+    "maritime_live_credit_to_minutes_verified": false,
+    "separate_openai_key_used": false,
+    "maritime_injected_proxy_key_used": true
+  }
+}
