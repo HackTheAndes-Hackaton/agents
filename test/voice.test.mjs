@@ -82,3 +82,16 @@ test('Voz: tickets vencen con la sesión', async t => {
   await until(() => p.events.some(e => e.type === 'call.ended'));
   assert.equal((await f.post(`/v1/sessions/${room.session_id}/offer`, {}, room.producer_token)).status, 404);
 });
+
+test('Voz: la comprensión lenta no bloquea nuevas detecciones', async t => {
+  let release, detections = 0;
+  const gate = new Promise(r => { release = r; });
+  const f = await fixture(t, { detect: async () => { detections++; return { alerta: false, probabilidad: .1 }; }, understand: async () => { await gate; return { rol: 'comprension' }; } });
+  t.after(() => release());
+  const room = await f.create(), p = await f.connect(room);
+  p.ws.send(JSON.stringify({ type: 'transcript.update', id: 'a', text: 'Primer fragmento autorizado', final: true }));
+  await until(() => p.events.some(e => e.type === 'alert.updated'));
+  p.ws.send(JSON.stringify({ type: 'transcript.update', id: 'b', text: 'Segundo fragmento autorizado', final: true }));
+  await until(() => p.events.some(e => e.type === 'alert.updated' && e.revision === 2));
+  assert.equal(detections, 2); assert.ok(!p.events.some(e => e.type === 'understanding.update')); release();
+});

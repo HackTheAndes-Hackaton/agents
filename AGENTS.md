@@ -1,6 +1,6 @@
 # Agentes de seguridad de HackTheAndes
 
-Este repositorio implementa dos agentes de análisis de transcripciones autorizadas, con respuestas en español. `AGENT_ROLE=comprension` organiza los hechos; `AGENT_ROLE=deteccion` evalúa señales de riesgo. Sus instrucciones están en `prompts/`.
+Este repositorio implementa dos agentes de análisis de transcripciones autorizadas, con respuestas en español. `AGENT_ROLE=comprension` organiza los hechos; `AGENT_ROLE=deteccion` evalúa señales de riesgo. `AGENT_ROLE=voz` reúne ambos análisis y la señalización WebRTC en una VM. Sus instrucciones están en `prompts/`.
 
 - Mantén separados hechos observados, inferencias y conclusiones revisadas.
 - No atribuyas identidades por nombres, números o voz, ni afirmes que una alerta confirma un delito.

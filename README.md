@@ -9,7 +9,7 @@ Cada agente usa el mismo servidor y un valor distinto de `AGENT_ROLE`. Comprensi
 
 ## Uso
 
-Node.js 24 o posterior; sin dependencias npm.
+Node.js 24 o posterior. Ejecuta `npm ci` para instalar la dependencia WebSocket.
 
 ```sh
 export OPENAI_API_KEY=tu-clave
@@ -33,7 +33,8 @@ El flujo duerme Comprensión antes de llamar a Detección porque el plan gratuit
 
 ## Configuración
 
-- `AGENT_ROLE`: `comprension` o `deteccion`.
+- `AGENT_ROLE`: `comprension`, `deteccion` o `voz` (canal WebRTC).
+- `VOICE_ACCESS_CODE`: obligatorio para el canal de voz público, al menos 12 caracteres aleatorios. Nunca lo incluyas en un cliente distribuido.
 - `OPENAI_API_KEY` y `OPENAI_BASE_URL`: acceso al modelo; Maritime puede inyectarlos al habilitar su proxy.
 - `OPENAI_MODEL`: por defecto `gpt-4.1-mini`; debe estar disponible en el proveedor.
 - `OPENAI_DECISION_MODEL`: por defecto `gpt-6-luna` para Detección. Requiere el endpoint `/decisions`, comprobado a través del proxy de Maritime el 17/10/2026.
@@ -49,7 +50,7 @@ Detección no guarda historial aunque se active `PERSIST_HISTORY`. `true` pide r
 
 El Dockerfile está en la raíz. Crea dos agentes de framework `custom` con el mismo código y configura su rol antes de probarlos. El CLI permite subir código local con `maritime agents create --from-dir . --name <nombre> --framework custom --use-maritime-llm --idle-ttl-seconds 600 --json`; esta vía evita requerir acceso del constructor a GitHub privado. El código también puede desplegarse desde GitHub conectando la aplicación de Maritime.
 
-El servicio debe permanecer detrás del acceso autenticado de Maritime: no implementa autenticación propia. Las llamadas al proveedor tienen un límite de 24 segundos para respetar el presupuesto de respuesta de Maritime.
+Los roles de texto deben permanecer detrás del acceso autenticado de Maritime: no implementan autenticación propia. El rol `voz` puede ser público porque protege la creación de salas con un código privado y emite tickets limitados por sesión. Las llamadas al proveedor tienen un límite de 24 segundos para respetar el presupuesto de respuesta de Maritime.
 
 Los dos agentes se crearon desde el archivo del código de este repositorio, mediante subida local. No se configuró despliegue automático desde GitHub. Los IDs y roles están en `deploy/agentes.json`; el directorio está vinculado a Comprensión mediante `.maritime/` (ignorado por Git). `maritime.json` y la habilidad de `.claude/skills/maritime/` permiten retomar la operación. Usa siempre el nombre explícito para operar Detección.
 
@@ -57,8 +58,8 @@ Con maritime-cli 2.0.1, el comando abreviado `maritime chat <nombre> <JSON>` pue
 
 ## Alcance
 
-Esta entrega procesa transcripciones. La captura ESP32/INMP441, el transporte autenticado de audio, la transcripción, la aplicación móvil, el panel y la comparación de voz son integraciones posteriores. Los agentes no controlan llamadas, presentan denuncias, publican sospechosos ni identifican personas por su voz.
+Esta entrega procesa transcripciones y ofrece un canal de voz propio con `AGENT_ROLE=voz`. Su página admite micrófono y archivos; el módulo JavaScript acepta también el `MediaStream` de un intermediario WebRTC. La señalización pasa por Maritime y el audio va al transcriptor de OpenAI. Los dos agentes lógicos se ejecutan en la misma VM para permitir alertas continuas con el límite gratuito de una máquina despierta.
 
-En la futura integración de voz, el transcriptor debe enviar un fragmento con contexto suficiente de la conversación, no palabras aisladas. El detector no escucha audio ni evalúa tono. La aplicación debe mostrar cuándo el audio, la transcripción o la detección están indisponibles. La transcripción y una eventual respuesta hablada tienen costos separados del clasificador.
+Consulta [el contrato del canal y la conexión de Tiskz](docs/canal-voz.md). No se ha modificado la app Android ni implementado captura de llamadas de operadora. Los agentes no controlan llamadas, presentan denuncias, publican sospechosos ni identifican personas por su voz. El detector evalúa el texto y el contexto; no escucha tono ni verifica identidad. La interfaz muestra los errores de transcripción y análisis.
 
 Los prompts de cada rol están en `prompts/`. Los ejemplos y las pruebas no demuestran precisión general ni probabilidades calibradas.
