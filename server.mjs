@@ -4,6 +4,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { detectAlert, parseThreshold } from './decisions.mjs';
+import { createVoiceServer } from './voice.mjs';
 
 export async function createAgentServer(config = {}) {
   const dataDir = config.dataDir ?? process.env.DATA_DIR ?? '/data';
@@ -11,6 +12,7 @@ export async function createAgentServer(config = {}) {
   const baseUrl = config.baseUrl ?? process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
   const model = config.model ?? process.env.OPENAI_MODEL ?? 'gpt-4.1-mini';
   const role = config.role ?? process.env.AGENT_ROLE ?? 'comprension';
+  if (role === 'voz') return createVoiceServer(config);
   if (!['comprension', 'deteccion'].includes(role)) throw new Error('AGENT_ROLE debe ser comprension o deteccion');
   const instructions = role === 'comprension' ? config.instructions ?? await readFile(new URL('./prompts/comprension.md', import.meta.url), 'utf8') : null;
   const decisionModel = config.decisionModel ?? process.env.OPENAI_DECISION_MODEL ?? 'gpt-6-luna';
@@ -111,5 +113,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const port = Number(process.env.PORT ?? 3000);
   const server = await createAgentServer();
   server.listen(port, '0.0.0.0', () => console.log(JSON.stringify({ event: 'listening', host: '0.0.0.0', port })));
-  process.on('SIGTERM', () => server.close(() => process.exit(0)));
+  process.on('SIGTERM', async () => { await server.closeVoice?.(); server.close(() => process.exit(0)); });
 }
