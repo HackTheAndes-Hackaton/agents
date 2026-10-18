@@ -2,7 +2,7 @@
 
 Prototipo en español basado en el resumen de HackTheAndes:
 
-1. **andes-comprension** organiza la transcripción autorizada: resumen, solicitudes, hechos, citas e incertidumbres.
+1. **andes-comprension** organiza citas literales de la transcripción autorizada y categorías para revisar, sin atribuir identidades ni hablantes.
 2. **andes-deteccion** evalúa la transcripción original con `gpt-6-luna` mediante OpenAI Decisions y devuelve `true` o `false` para una alerta preventiva. El análisis previo no se utiliza como evidencia para el detector.
 
 Cada agente usa el mismo servidor y un valor distinto de `AGENT_ROLE`. Comprensión conserva `gpt-4.1-mini` y sus citas se comprueban contra la transcripción. Detección recibe una probabilidad tipada, no texto generado, y el código la convierte en booleano. El resultado es provisional y requiere revisión humana.
@@ -35,7 +35,7 @@ El flujo duerme Comprensión antes de llamar a Detección porque el plan gratuit
 
 **andes-voz:** https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755
 
-Abre la página HTTPS, introduce el código privado del equipo, confirma la autorización y conecta un micrófono o un archivo de prueba. La página muestra transcripción, alerta booleana y comprensión. El código se encuentra localmente en `.maritime/voice-access.json`, excluido de Git. Al conectar, la sección «Conectar el observador de Tiskz» entrega la URL WebSocket temporal para Settings → WebSocket URL de la app Android; desactiva Demo Mode. No distribuyas el código maestro en una aplicación publicada.
+Abre la página HTTPS, introduce el código privado del equipo, confirma la autorización y conecta un micrófono o un archivo de prueba. La página muestra transcripción, alerta booleana y comprensión. El código se encuentra localmente en `.maritime/voice-access.json`, excluido de Git. En Android también se puede abrir Inicio → Abrir canal de voz, con captura nativa a 48 kHz y creación automática de su sala. El modo demo de llamadas es independiente. La página web conserva la opción de conectar un observador temporal. No distribuyas el código maestro en una aplicación publicada.
 
 El módulo `web/voice-client.js` también recibe un `MediaStream` existente mediante `connectVoice`, para integrarlo con otro intermediario WebRTC. Consulta [el contrato de integración](docs/canal-voz.md). El servicio reúne los dos agentes lógicos en una VM; las otras dos máquinas pueden permanecer dormidas. La transcripción y la inferencia consumen créditos de IA.
 
@@ -68,6 +68,10 @@ Con maritime-cli 2.0.1, el comando abreviado `maritime chat <nombre> <JSON>` pue
 
 Esta entrega procesa transcripciones y ofrece un canal de voz propio con `AGENT_ROLE=voz`. Su página admite micrófono y archivos; el módulo JavaScript acepta también el `MediaStream` de un intermediario WebRTC. La señalización pasa por Maritime y el audio va al transcriptor de OpenAI. Los dos agentes lógicos se ejecutan en la misma VM para permitir alertas continuas con el límite gratuito de una máquina despierta.
 
-Consulta [el contrato del canal y la conexión de Tiskz](docs/canal-voz.md). No se ha modificado la app Android ni implementado captura de llamadas de operadora. Los agentes no controlan llamadas, presentan denuncias, publican sospechosos ni identifican personas por su voz. El detector evalúa el texto y el contexto; no escucha tono ni verifica identidad. La interfaz muestra los errores de transcripción y análisis.
+Consulta [el contrato del canal y la conexión de Tiskz](docs/canal-voz.md). La app Android integra el canal de voz; no captura audio de llamadas de operadora. Los agentes no presentan denuncias, publican sospechosos ni identifican personas por su voz. El detector evalúa el texto y el contexto; no escucha tono ni verifica identidad. La interfaz muestra los errores de transcripción y análisis.
 
 Los prompts de cada rol están en `prompts/`. Los ejemplos y las pruebas no demuestran precisión general ni probabilidades calibradas.
+
+La API de voz ofrece también `mode: "assistant"`: GPT-Live 1 responde en español con voz `marin`, mientras los dos agentes analizan únicamente los subtítulos de quien llama. Requiere consentimiento específico y la app Android actualizada. Véanse el contrato, las limitaciones de telefonía y el cierre de consumo en [canal de voz](docs/canal-voz.md#conversación-con-gpt-live-1-y-marin).
+
+Para recibir alertas de llamadas atendidas por un número de Vapi, consulta [llamadas telefónicas con marin](docs/LLAMADAS_VAPI.md). Ese canal usa saldo de Vapi para voz y créditos de Maritime para los dos análisis. El desvío de la línea Entel debe habilitarlo la operadora; esta integración no lo activa.

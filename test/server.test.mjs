@@ -23,7 +23,7 @@ async function fixture(t, options = {}) {
     res.writeHead(options.status ?? 200, { 'Content-Type': 'application/json' });
     const result = options.role === 'deteccion'
       ? options.result ?? { model: 'gpt-6-luna', answers: [{ type: 'predicate', name: 'alerta', probability: options.probability ?? 0.9 }] }
-      : { choices: [{ message: { content: JSON.stringify(options.result ?? { rol: 'comprension', resumen: 'Petición de transferencia', evidencias: [{ cita: 'Transfiere dinero ahora.', observacion: 'Petición explícita' }], limitaciones: ['Identidad no verificada'] }) } }] };
+      : { choices: [{ message: { content: JSON.stringify(options.result ?? { rol: 'comprension', resumen: 'Petición de transferencia', evidencias: [{ tipo: 'solicitud', cita: 'Transfiere dinero ahora.', observacion: 'Petición explícita' }], limitaciones: ['Identidad no verificada'] }) } }] };
     res.end(JSON.stringify(result));
   });
   const baseUrl = await listen(provider);
@@ -51,7 +51,7 @@ test('analiza sin guardar transcripciones por defecto', async t => {
 });
 
 test('rechaza citas que no existen en la fuente', async t => {
-  const f = await fixture(t, { result: { rol: 'comprension', evidencias: [{ cita: 'Inventada' }], limitaciones: [] } });
+  const f = await fixture(t, { result: { rol: 'comprension', evidencias: [{ tipo: 'contexto', cita: 'Inventada' }], limitaciones: [] } });
   assert.equal((await f.chat(incident)).status, 500);
 });
 
@@ -109,4 +109,14 @@ test('errores y latencia del proveedor se controlan', async t => {
   assert.equal((await denied.chat(incident)).status, 502);
   const slow = await fixture(t, { delay: 60, timeoutMs: 10 });
   assert.equal((await slow.chat(incident)).status, 504);
+});
+
+
+test('chat de comprensión tampoco publica nombres o narrativas inventadas del proveedor', async t => {
+  const f = await fixture(t, { result: { rol: 'comprension', resumen: 'Enrique recibe dinero de Pedro', evidencias: [{ tipo: 'solicitud', cita: incident.transcripcion, observacion: 'Enrique se identifica' }], limitaciones: ['Identidad verificada'] } });
+  const response = await f.chat(incident);
+  assert.equal(response.status, 200);
+  const analysis = JSON.parse((await response.json()).response);
+  assert.equal(analysis.modo, 'extractivo_sin_identidades_v1');
+  assert.doesNotMatch(JSON.stringify(analysis), /Enrique|Pedro|Identidad verificada/);
 });

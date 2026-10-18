@@ -1,11 +1,11 @@
 {
-  "verificado_en": "2026-10-17T19:54:00.717122+00:00",
+  "verificado_en": "2026-10-17T16:34:28.273229-05:00",
   "nombre": "andes-voz",
   "id": "ebf0eb81-42c0-4437-a044-1af84af1b755",
   "url": "https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755",
   "estado": "active",
-  "codigo_del_servicio": "0203481",
-  "runtime_sha256": "09409498a91f4e993be80c98446a036e85fe898956e7c9939da0f954ee5db34e",
+  "codigo_del_servicio": "29bf5f142e04c4daf7df32a94e5a579d6c8e2149",
+  "runtime_sha256": "4f44dd71457a9d0db6865d79f23636b77b618ede5c5eb36dd2efdc2ed4c2e54b",
   "modelos": {
     "transcription": "gpt-live-transcribe",
     "understanding": "gpt-4.1-mini",
@@ -24,44 +24,152 @@
   },
   "chat_comprobado": true,
   "websocket_publico_comprobado": true,
-  "observador_externo_recibio": [
-    "session.ready",
-    "transcript.update",
-    "risk.update",
-    "understanding.update"
-  ],
-  "pruebas_unitarias_pasadas": 16,
-  "pruebas_de_audio": [
+  "pruebas_unitarias_pasadas": 23,
+  "regresion_sin_identidades": [
     {
-      "escenario": "riesgo",
-      "fuente": "audio sintetico en español, voz Paulina de macOS",
-      "transporte": "WebRTC real desde el navegador",
-      "alerta_esperada": true,
-      "alerta_obtenida": true,
-      "comprension": "analizado",
-      "citas_literales_verificadas": true,
-      "negacion_preservada": null
+      "scenario": "corrupto",
+      "alert": true,
+      "analysis": {
+        "rol": "comprension",
+        "modo": "extractivo_sin_identidades_v1",
+        "estado": "analizado",
+        "resumen": "Fragmentos seleccionados para revisar: posibles amenazas. Las citas conservan el texto recibido; no se atribuyen identidades ni hablantes.",
+        "participantes_mencionados": [],
+        "solicitudes": [],
+        "datos_observados": [
+          "Enrique mil soles ahora mismo o le haré daño a tu familia."
+        ],
+        "evidencias": [
+          {
+            "tipo": "amenaza",
+            "cita": "Enrique mil soles ahora mismo o le haré daño a tu familia.",
+            "observacion": "Expresión seleccionada para revisar una posible amenaza; no confirma un delito."
+          }
+        ],
+        "incertidumbres": [
+          "No se determina quién habla ni quién recibe una petición o amenaza.",
+          "Las palabras dudosas deben contrastarse con el audio; no se reconstruyen a partir de suposiciones."
+        ],
+        "limitaciones": [
+          "Identidades no verificadas ni atribuidas.",
+          "Posibles errores de transcripción; una cita literal no confirma que el audio diga lo mismo."
+        ]
+      }
     },
     {
-      "escenario": "legitimo",
-      "fuente": "audio sintetico en español, voz Paulina de macOS",
-      "transporte": "WebRTC real desde el navegador",
-      "alerta_esperada": false,
-      "alerta_obtenida": false,
-      "comprension": "analizado",
-      "citas_literales_verificadas": true,
-      "negacion_preservada": true
+      "scenario": "legitimo",
+      "alert": false,
+      "analysis": {
+        "rol": "comprension",
+        "modo": "extractivo_sin_identidades_v1",
+        "estado": "analizado",
+        "resumen": "Fragmentos seleccionados para revisar: contexto, negaciones. Las citas conservan el texto recibido; no se atribuyen identidades ni hablantes.",
+        "participantes_mencionados": [],
+        "solicitudes": [],
+        "datos_observados": [
+          "Hola, soy Ana.",
+          "Confirmamos la reunión de mañana a las diez.",
+          "No necesito pagos ni datos personales."
+        ],
+        "evidencias": [
+          {
+            "tipo": "contexto",
+            "cita": "Hola, soy Ana.",
+            "observacion": "Contexto literal; las menciones personales no verifican identidades."
+          },
+          {
+            "tipo": "contexto",
+            "cita": "Confirmamos la reunión de mañana a las diez.",
+            "observacion": "Contexto literal; las menciones personales no verifican identidades."
+          },
+          {
+            "tipo": "negacion",
+            "cita": "No necesito pagos ni datos personales.",
+            "observacion": "Negación seleccionada; se conserva su formulación literal."
+          }
+        ],
+        "incertidumbres": [
+          "No se determina quién habla ni quién recibe una petición o amenaza.",
+          "Las palabras dudosas deben contrastarse con el audio; no se reconstruyen a partir de suposiciones."
+        ],
+        "limitaciones": [
+          "Identidades no verificadas ni atribuidas.",
+          "Posibles errores de transcripción; una cita literal no confirma que el audio diga lo mismo."
+        ]
+      }
     }
   ],
+  "pruebas_de_audio_nativo": [
+    {
+      "scenario": "riesgo",
+      "alert": true,
+      "transcript": "Transfiere mil soles ahora mismo o le haré daño a tu familia. No cortes la llamada. No hables con nadie.",
+      "captured_sample_rate": 48000,
+      "captured_peak_rms": 0.6377722022832785,
+      "committed_segments": 1,
+      "understanding": "Fragmentos seleccionados para revisar: posibles amenazas, condiciones. Las citas conservan el texto recibido; no se atribuyen identidades ni hablantes.",
+      "mode": "extractivo_sin_identidades_v1",
+      "evidence": [
+        {
+          "quote": "Transfiere mil soles ahora mismo o le haré daño a tu familia.",
+          "observation": "Expresión seleccionada para revisar una posible amenaza; no confirma un delito."
+        },
+        {
+          "quote": "No cortes la llamada.",
+          "observation": "Fragmento seleccionado sobre una condición; debe revisarse en su contexto."
+        },
+        {
+          "quote": "No hables con nadie.",
+          "observation": "Fragmento seleccionado sobre una condición; debe revisarse en su contexto."
+        }
+      ],
+      "app_source_commit": "2c86332569a52465dcb25db8d9f951db62acd70a",
+      "instrumentation": "OK (1 test)"
+    },
+    {
+      "scenario": "legitimo",
+      "alert": false,
+      "transcript": "Hola, soy Ana. Confirmamos la reunión de mañana a las diez. No necesito pagos ni datos personales. Gracias y hasta mañana.",
+      "captured_sample_rate": 48000,
+      "captured_peak_rms": 0.6389016143458289,
+      "committed_segments": 2,
+      "understanding": "Fragmentos seleccionados para revisar: contexto, negaciones. Las citas conservan el texto recibido; no se atribuyen identidades ni hablantes.",
+      "mode": "extractivo_sin_identidades_v1",
+      "evidence": [
+        {
+          "quote": "Hola, soy Ana.",
+          "observation": "Contexto literal; las menciones personales no verifican identidades."
+        },
+        {
+          "quote": "Confirmamos la reunión de mañana a las diez.",
+          "observation": "Contexto literal; las menciones personales no verifican identidades."
+        },
+        {
+          "quote": "No necesito pagos ni datos personales.",
+          "observation": "Negación seleccionada; se conserva su formulación literal."
+        },
+        {
+          "quote": "Gracias y hasta mañana.",
+          "observation": "Contexto literal; las menciones personales no verifican identidades."
+        }
+      ],
+      "app_source_commit": "2c86332569a52465dcb25db8d9f951db62acd70a",
+      "instrumentation": "OK (1 test)"
+    }
+  ],
+  "codigo_mobile": "2c86332569a52465dcb25db8d9f951db62acd70a",
   "sesiones_de_prueba_cerradas": true,
-  "alojamiento_reportado_centavos": 0,
-  "ia_total_cuenta_reportada_centavos": 1.341,
-  "consumo_reportado_hasta": "2026-10-17T19:53:42.139371Z",
+  "revision": {
+    "skill": "review-agent",
+    "corrected_findings_p2": 4,
+    "final": "No findings."
+  },
   "limites": [
-    "Las pruebas con dos audios sintéticos no establecen precisión general ni calibración.",
-    "Se analiza texto, no tono ni identidad de voces.",
-    "El cliente Android no se modificó ni se ejecutó; se verificó su contrato WebSocket con un observador independiente.",
-    "Los agentes analizan fragmentos cerrados por pausas; la latencia depende de la voz y del proveedor.",
-    "El cierre del proveedor usa hangup si hay Location; de lo contrario depende del cierre WebRTC del productor."
+    "Verificación con dos audios sintéticos en emulador; no se conectó un teléfono físico.",
+    "Estos casos no establecen precisión general ni garantizan ausencia de errores de transcripción.",
+    "Las menciones personales solo se conservan en citas literales; no verifican ni atribuyen identidades.",
+    "La pausa de 1,2 segundos y el procesamiento de modelos añaden latencia; no se promete un tiempo fijo.",
+    "Los escenarios se ejecutaron en arranques separados por limitaciones del controlador de audio del emulador.",
+    "Los intentos con proceso interrumpido o inyección en ráfaga que capturaba audio incompleto no se contaron como aprobados."
   ]
 }

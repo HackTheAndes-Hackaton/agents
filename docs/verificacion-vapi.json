@@ -1,0 +1,108 @@
+{
+  "tested_at_utc": "2026-10-17T23:15:50.670902+00:00",
+  "synthetic_audio_only": true,
+  "runtime_sha256": "4a23f86744be4a77adc9b5380e628dfa187fb045d407470529e315bb37c78a8f",
+  "apk_sha256": "6a46656acb155d53931f8b8f6e74e65c43c655f3d492cafc5945a05b39850d54",
+  "vapi_assistant_version": "v7",
+  "models": {
+    "phone_voice": "gpt-realtime-mini-2025-12-15",
+    "voice": "marin",
+    "transcription": "gpt-4o-transcribe",
+    "transcription_language": "es",
+    "understanding": "gpt-4.1-mini",
+    "detection": "gpt-6-luna"
+  },
+  "checks": {
+    "node_tests_passed": 35,
+    "android_unit_tests_passed": 19,
+    "assemble_debug": "passed",
+    "lint_debug": "passed",
+    "minified_runtime_smoke": "passed"
+  },
+  "cases": [
+    {
+      "scenario": "riesgo",
+      "passed": true,
+      "transport": "audio WebSocket Vapi y eventos HTTPS hacia Maritime; observador WSS con el protocolo de Android",
+      "alert": true,
+      "caller_transcript": "Sí, acepto continuar. Transfiera mil soles ahora mismo o le haré daño a tu familia. No cortes la llamada. No hables con nadie.",
+      "understanding": {
+        "rol": "comprension",
+        "modo": "extractivo_sin_identidades_v1",
+        "estado": "analizado",
+        "resumen": "Fragmentos seleccionados para revisar: posibles amenazas. Las citas conservan el texto recibido; no se atribuyen identidades ni hablantes.",
+        "participantes_mencionados": [],
+        "solicitudes": [],
+        "datos_observados": [
+          "Transfiera mil soles ahora mismo o le haré daño a tu familia."
+        ],
+        "evidencias": [
+          {
+            "tipo": "amenaza",
+            "cita": "Transfiera mil soles ahora mismo o le haré daño a tu familia.",
+            "observacion": "Expresión seleccionada para revisar una posible amenaza; no confirma un delito."
+          }
+        ],
+        "incertidumbres": [
+          "No se determina quién habla ni quién recibe una petición o amenaza.",
+          "Las palabras dudosas deben contrastarse con el audio; no se reconstruyen a partir de suposiciones."
+        ],
+        "limitaciones": [
+          "Identidades no verificadas ni atribuidas.",
+          "Posibles errores de transcripción; una cita literal no confirma que el audio diga lo mismo."
+        ]
+      },
+      "received_audio_nonzero_frames": 199,
+      "provider_status": "ended",
+      "ended_reason": "customer-ended-call",
+      "observed_vapi_credit_cost_usd": 0.0289
+    },
+    {
+      "scenario": "legitimo",
+      "passed": true,
+      "transport": "audio WebSocket Vapi y eventos HTTPS hacia Maritime; observador WSS con el protocolo de Android",
+      "alert": false,
+      "caller_transcript": "Sí, acepto continuar.\nHola.\nConfirmo nuestra reunión de mañana a las diez.\nNo necesito pagos ni datos personales.\nGracias.",
+      "understanding": {
+        "rol": "comprension",
+        "modo": "extractivo_sin_identidades_v1",
+        "estado": "analizado",
+        "resumen": "Fragmentos seleccionados para revisar: negaciones. Las citas conservan el texto recibido; no se atribuyen identidades ni hablantes.",
+        "participantes_mencionados": [],
+        "solicitudes": [],
+        "datos_observados": [
+          "No necesito pagos ni datos personales."
+        ],
+        "evidencias": [
+          {
+            "tipo": "negacion",
+            "cita": "No necesito pagos ni datos personales.",
+            "observacion": "Negación seleccionada; se conserva su formulación literal."
+          }
+        ],
+        "incertidumbres": [
+          "No se determina quién habla ni quién recibe una petición o amenaza.",
+          "Las palabras dudosas deben contrastarse con el audio; no se reconstruyen a partir de suposiciones."
+        ],
+        "limitaciones": [
+          "Identidades no verificadas ni atribuidas.",
+          "Posibles errores de transcripción; una cita literal no confirma que el audio diga lo mismo."
+        ]
+      },
+      "received_audio_nonzero_frames": 269,
+      "provider_status": "ended",
+      "ended_reason": "customer-ended-call",
+      "observed_vapi_credit_cost_usd": 0.0355
+    }
+  ],
+  "limits": {
+    "physical_phone_tested_with_this_apk": false,
+    "pstn_inbound_call_tested": false,
+    "entel_forwarding_configured": false,
+    "entel_forwarding_cost_verified": false,
+    "new_card_or_credits_purchased": false,
+    "phone_voice_uses_maritime_credits": false,
+    "analysis_uses_maritime_proxy": true,
+    "app_monitor_requires_foreground": true
+  }
+}
