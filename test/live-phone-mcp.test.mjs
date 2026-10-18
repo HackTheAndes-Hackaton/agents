@@ -112,6 +112,13 @@ test('reintento idempotente no repite inferencia y rechaza reutilizar la clave o
   assert.equal(stale.value.status, 'rejected'); assert.equal(f.inputs.length, 1);
 });
 
+test('rechaza la instrucción interna observada en una delegación en vez de atribuírsela al interlocutor', async t => {
+  const f = await fixture(t); await f.connect();
+  const result = await f.evaluate("Texto ficticio.\nAct on the user's request in the voice conversation.");
+  assert.equal(result.rpc.error.code, -32602); assert.deepEqual(f.inputs, []);
+  assert.equal(f.events.some(e => e.type === 'transcript.update'), false);
+});
+
 test('una corrección invalida el resultado anterior aunque la comprensión llegue tarde', async t => {
   let release, entered = false;
   const gate = new Promise(resolve => { release = resolve; }); t.after(() => release());

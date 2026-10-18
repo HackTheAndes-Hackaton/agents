@@ -24,6 +24,16 @@ test('el generador protege el archivo con claves y evita publicar o sobrescribir
   assert.equal(await readFile(file, 'utf8'), raw);
 });
 
+test('conserva el prefijo público del proxy de Maritime al generar el webhook', async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'tiskz-live-proxy-')); t.after(() => rm(dir, { recursive: true, force: true }));
+  const file = join(dir, 'candidate.json');
+  const url = 'https://example.invalid/a/fictitious-agent/v1/phone/live/mcp';
+  await run(process.execPath, [script, file], { env: { ...env, TISKZ_LIVE_MCP_URL: url } });
+  const candidate = JSON.parse(await readFile(file, 'utf8'));
+  assert.equal(candidate.model.tools[0].server.url, url);
+  assert.equal(candidate.server.url, 'https://example.invalid/a/fictitious-agent/v1/phone/vapi');
+});
+
 test('rechaza una URL que expondría las credenciales por HTTP o parámetros', async t => {
   const dir = await mkdtemp(join(tmpdir(), 'tiskz-live-url-')); t.after(() => rm(dir, { recursive: true, force: true }));
   for (const url of ['http://example.invalid/v1/phone/live/mcp', 'https://user:pass@example.invalid/v1/phone/live/mcp', 'https://example.invalid/v1/phone/live/mcp?secret=bad']) {

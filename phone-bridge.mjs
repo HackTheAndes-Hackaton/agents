@@ -251,7 +251,7 @@ export function createPhoneBridge(config) {
           target[`${component}DurationMs`] = Math.round(performance.now() - started);
           if (component === 'detect') {
             emit({ type: 'alert.updated', alerta: result.alerta, probability: result.probabilidad, revision, provisional: true,
-              source: 'vapi_realtime', caption_to_alert_ms: Date.now() - target.captionReceivedAt });
+              source: target.liveInput ? 'live_reasoner_report_not_audio_verified' : 'vapi_realtime', caption_to_alert_ms: Date.now() - target.captionReceivedAt });
             emit({ type: 'risk.update', risk_percent: Math.round(result.probabilidad * 100), alerta: result.alerta, revision, reasons: ['Estimación provisional; no confirma una estafa.'], scam_type: null, impersonating: null, score_kind: 'probabilidad_de_alerta_no_calibrada' });
           } else emit({ type: 'understanding.update', analysis: result, revision });
         } catch {

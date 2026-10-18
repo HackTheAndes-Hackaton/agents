@@ -45,6 +45,6 @@ Para una prueba aislada del servidor, usar `VAPI_LIVE_MCP_ENABLED=true`, `VAPI_L
 
 ## Validación local
 
-`npm test`: 101 pruebas aprobadas, incluidas autorización, revisiones, reintentos, correcciones, invitación a entrar y cortes confirmados. El paquete comprimido arranca y responde a `/health` con ambos modos, y el catálogo MCP solo está disponible al habilitarlo. Estas comprobaciones se realizaron con red externa bloqueada y datos ficticios; no midieron voz, coste ni latencia real de Vapi. No se modificaron el asistente, el número ni el despliegue compartido.
+`npm test`: 103 pruebas aprobadas, incluidas autorización, revisiones, reintentos, correcciones, invitación a entrar y cortes confirmados. El paquete comprimido arranca y responde a `/health` con ambos modos, y el catálogo MCP solo está disponible al habilitarlo. Estas comprobaciones se realizaron con red externa bloqueada y datos ficticios; no midieron voz, coste ni latencia real de Vapi. No se modificaron el asistente, el número ni el despliegue compartido.
 
 Fuentes: [GPT-Live en Vapi](https://docs.vapi.ai/gpt-live/configuration), [herramientas y reasoner](https://docs.vapi.ai/gpt-live/tools), [MCP y cabecera X-Call-Id](https://docs.vapi.ai/tools/mcp). El patrón de separación de audio/delegación se contrastó con los repositorios de Reevalua; no se copiaron código, datos, memoria ni credenciales de esos proyectos.

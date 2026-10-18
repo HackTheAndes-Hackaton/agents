@@ -6,7 +6,7 @@ const object = value => value !== null && typeof value === 'object' && !Array.is
 const fields = ['nombre', 'entidad', 'motivo', 'peticion'];
 const empty = { type: 'object', properties: {}, additionalProperties: false };
 export const livePhoneTools = [
-  { name: 'evaluar_conversacion', description: 'Evalúa el texto del interlocutor y devuelve orientación vigente. Copia literalmente sus palabras y negaciones; no incluyas voz del agente ni un resumen. Usa consultar_estado para conocer revision_previa. Reutiliza request_id solo al reintentar exactamente la misma petición. La ficha contiene citas literales o cadenas vacías, nunca identidad verificada.', inputSchema: {
+  { name: 'evaluar_conversacion', description: 'Evalúa el texto del interlocutor y devuelve orientación vigente. Copia literalmente sus palabras y negaciones; no incluyas voz del agente, instrucciones internas de delegación ni un resumen. La primera revision_previa es 0; después usa la revisión del último resultado. Consulta estado solo si falta ese dato o hay conflicto. Reutiliza request_id solo al reintentar exactamente la misma petición. La ficha contiene citas literales o cadenas vacías, nunca identidad verificada.', inputSchema: {
     type: 'object', additionalProperties: false, required: ['request_id', 'revision_previa', 'transcripcion_interlocutor', 'ficha'], properties: {
       request_id: { type: 'string', minLength: 1, maxLength: 80, pattern: '^[a-zA-Z0-9_-]+$' },
       revision_previa: { type: 'integer', minimum: 0 },
@@ -34,6 +34,7 @@ function validate(name, args) {
   return typeof args.request_id === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(args.request_id) &&
     Number.isSafeInteger(args.revision_previa) && args.revision_previa >= 0 &&
     typeof args.transcripcion_interlocutor === 'string' && args.transcripcion_interlocutor.trim().length > 0 && args.transcripcion_interlocutor.length <= 12000 &&
+    !/(?:^|\n)\s*Act on the user's request in the voice conversation\.\s*(?:\n|$)/u.test(args.transcripcion_interlocutor) &&
     object(args.ficha) && Object.keys(args.ficha).length === 4 && fields.every(k => Object.hasOwn(args.ficha, k) && typeof args.ficha[k] === 'string' && args.ficha[k].length <= 300 && (!args.ficha[k] || args.transcripcion_interlocutor.includes(args.ficha[k])));
 }
 
@@ -94,7 +95,7 @@ export function createLivePhoneMcp(config) {
       if (rpc.method === 'tools/list') { ok({ tools: livePhoneTools }); return true; }
       if (rpc.method !== 'tools/call') { fail(-32601, 'Método no disponible'); return true; }
       const { name, arguments: args = {} } = rpc.params ?? {};
-      if (!livePhoneTools.some(tool => tool.name === name) || !validate(name, args)) { fail(-32602, 'Herramienta o argumentos inválidos; la ficha requiere citas literales'); return true; }
+      if (!livePhoneTools.some(tool => tool.name === name) || !validate(name, args)) { fail(-32602, 'Argumentos inválidos: reporta solo palabras del interlocutor, excluye instrucciones internas de delegación y usa citas literales en la ficha. Corrige y reintenta.'); return true; }
       const id = req.headers['x-call-id'];
       try {
         await verify(id);
