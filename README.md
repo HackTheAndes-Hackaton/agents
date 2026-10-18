@@ -46,6 +46,8 @@ El módulo `web/voice-client.js` también recibe un `MediaStream` existente medi
 
 ## Configuración
 
+El destino del panel es la API de producción: `TISKZ_API_URL=https://web-repo-xi.vercel.app/api/v1`, en `.env` del servidor. No se solicita elegir entorno en la APK. `npm start` carga `.env` y conserva la compatibilidad con los secretos locales de `.env.local`; el contenedor incluye esa misma URL por defecto. Las claves permanecen fuera de Git.
+
 - `AGENT_ROLE`: `comprension`, `deteccion` o `voz` (canal WebRTC).
 - `VOICE_ACCESS_CODE`: obligatorio para el canal de voz público, al menos 12 caracteres aleatorios. Nunca lo incluyas en un cliente distribuido.
 - `OPENAI_API_KEY` y `OPENAI_BASE_URL`: acceso al modelo; Maritime puede inyectarlos al habilitar su proxy.

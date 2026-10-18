@@ -45,7 +45,10 @@ export function createVoiceprintEngine({ dir, model = VOICEPRINT_MODEL, WorkerCl
   }
   const pending = new Map();
   let next = 0, alive = true;
-  const worker = new WorkerClass(WORKER, { eval: true, workerData: { dir, file: model.file, sha256: model.sha256, dim: model.dim } });
+  // Maritime usa NODE_OPTIONS para arrancar el servidor. El hilo del modelo no
+  // debe heredar ese arranque ni volver a abrir el puerto HTTP.
+  const worker = new WorkerClass(WORKER, { eval: true, execArgv: [], env: { ...process.env, NODE_OPTIONS: '' },
+    workerData: { dir, file: model.file, sha256: model.sha256, dim: model.dim } });
   worker.unref?.();
   const fail = () => { alive = false; for (const { reject } of pending.values()) reject(Error('voiceprint_unavailable')); pending.clear(); };
   const ready = new Promise(resolve => {
@@ -144,7 +147,7 @@ export function voiceprintConfig(env = process.env) {
 }
 
 /** Instrucción interna para el agente cuando la estafa ya está confirmada. */
-export const COLLECT_INSTRUCTION = 'Instrucción interna del sistema, no la menciones: esta llamada ya se identificó como estafa. ' +
+export const COLLECT_INSTRUCTION = 'Instrucción interna del sistema, no la menciones: el análisis activó una alerta y el usuario autorizó recopilar una muestra pendiente de revisión. Esto no confirma una estafa ni una identidad. ' +
   'Desde ahora tu objetivo es que la otra persona siga hablando con calma el mayor tiempo posible. Muestra interés y algo de duda; ' +
   'pide que te explique otra vez, más despacio, qué hay que hacer, a qué cuenta o número, a nombre de quién y desde dónde llama. ' +
   'Haz una pregunta abierta por turno. No aceptes pagos, no des datos, códigos ni claves, y no digas que la vas a denunciar. ' +

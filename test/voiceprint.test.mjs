@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { once } from 'node:events';
+import { once, EventEmitter } from 'node:events';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { WebSocket } from 'ws';
 import { createPhoneBridge } from '../phone-bridge.mjs';
 import { VoiceCollector, voiceprintConfig, createVoiceprintEngine, cosine } from '../voiceprint.mjs';
@@ -189,4 +192,25 @@ test('Sin motor instalado la huella queda deshabilitada sin error', async () => 
   assert.equal(voiceprintConfig({}).enabled, false);
   assert.equal(voiceprintConfig({ VOICEPRINT_NOTIFY_SIMILARITY: '7' }).notifySimilarity, 0.7);
   assert.ok(Math.abs(cosine([1, 0], [1, 0]) - 1) < 1e-9);
+});
+
+test('El hilo vocal no hereda el arranque HTTP de Maritime', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'tiskz-worker-'));
+  let options;
+  class FakeWorker extends EventEmitter {
+    constructor(_source, config) { super(); options = config; queueMicrotask(() => this.emit('message', { ready: true })); }
+    unref() {}
+    terminate() {}
+  }
+  try {
+    await mkdir(join(dir, 'models'));
+    await mkdir(join(dir, 'node_modules', 'sherpa-onnx-node'), { recursive: true });
+    await writeFile(join(dir, 'models', 'ficticio.onnx'), 'modelo-ficticio');
+    const engine = createVoiceprintEngine({ dir, WorkerClass: FakeWorker,
+      model: { id: 'ficticio', file: 'ficticio.onnx', sha256: 'ficticio', dim: 256 } });
+    assert.equal(await engine.ready, true);
+    assert.deepEqual(options.execArgv, []);
+    assert.equal(options.env.NODE_OPTIONS, '');
+    engine.close();
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
