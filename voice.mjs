@@ -27,7 +27,9 @@ export async function createVoiceServer(config = {}) {
   const attempts = new Map();
   const files = new Map(await Promise.all(['index.html', 'voice-client.js', 'style.css'].map(async name => [name, await readFile(new URL(`./web/${name}`, import.meta.url))])));
   const ai = { baseUrl, apiKey, timeoutMs: config.timeoutMs ?? 20000 };
+  const store=config.evidenceStore ?? config.evidenceMcp ?? (process.env.TISKZ_AUDIO_API_URL ? evidenceApiClient() : evidenceClient());
   const phone = createPhoneBridge({ accessCode, ai: { ...ai, threshold }, secret: config.vapiSecret ?? process.env.VAPI_WEBHOOK_SECRET, assistantId: config.vapiAssistantId ?? process.env.VAPI_ASSISTANT_ID, apiKey: config.vapiApiKey ?? process.env.VAPI_API_KEY, number: process.env.VAPI_PHONE_NUMBER, detect: config.detect, understand: config.understand, analysisMs: config.phoneAnalysisMs,
+    evidenceStore: store, evidenceEnabled: config.phoneEvidenceEnabled ?? process.env.VAPI_PHONE_EVIDENCE_ENABLED === 'true', evidenceSimulated: config.phoneEvidenceSimulated ?? process.env.VAPI_PHONE_EVIDENCE_SIMULATED === 'true',
     scribeEnabled: config.scribeEnabled ?? process.env.VAPI_SCRIBE_SHADOW_ENABLED === 'true' });
   const emit = (room, event) => {
     const payload = { ...event, session_id: room.id, timestamp: new Date().toISOString() };
@@ -161,7 +163,6 @@ export async function createVoiceServer(config = {}) {
     if (!equal(appToken(req), room.producer)) throw statusError('Acceso no autorizado', 401);
     return room;
   }
-  const store=config.evidenceStore ?? config.evidenceMcp ?? (process.env.TISKZ_AUDIO_API_URL ? evidenceApiClient() : evidenceClient());
   const evidence = evidenceRoutes({authorizeRoom, body, store, capture, simulated:config.evidenceSimulated ?? process.env.TISKZ_EVIDENCE_SIMULATED === 'true'});
   const server = http.createServer(async (req, res) => {
     const send = (status, data) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(data)); };
