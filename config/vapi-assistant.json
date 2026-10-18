@@ -19,7 +19,7 @@
     "provider": "openai",
     "voiceId": "marin"
   },
-  "firstMessage": "Hola, ¿qué necesitas?",
+  "firstMessage": "Hola, dime.",
   "firstMessageMode": "assistant-speaks-first",
   "maxDurationSeconds": 180,
   "artifactPlan": {
@@ -42,7 +42,7 @@
     "language": "es"
   },
   "startSpeakingPlan": {
-    "waitSeconds": 1.0
+    "waitSeconds": 0.4
   },
   "stopSpeakingPlan": {
     "numWords": 0,
@@ -52,5 +52,22 @@
   "monitorPlan": {
     "controlEnabled": true,
     "controlAuthenticationEnabled": false
-  }
+  },
+  "hooks": [
+    {
+      "name": "tiskz_inicio_sin_respuesta",
+      "on": "customer.speech.timeout",
+      "options": {
+        "timeoutSeconds": 6,
+        "triggerMaxCount": 1,
+        "triggerResetMode": "never"
+      },
+      "do": [
+        {
+          "type": "say",
+          "exact": "Hola, ¿me escuchas?"
+        }
+      ]
+    }
+  ]
 }

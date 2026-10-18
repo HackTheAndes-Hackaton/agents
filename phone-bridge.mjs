@@ -2,7 +2,7 @@ import { timingSafeEqual, randomBytes, randomUUID } from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import { detectAlert } from './decisions.mjs';
 import { understandIncident } from './understanding.mjs';
-import { currentAssessment } from './call-policy.mjs';
+import { assessmentEvents } from './call-policy.mjs';
 
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 // El control llega de Vapi autenticado; nunca seguir URLs arbitrarias ni redirecciones.
@@ -38,8 +38,15 @@ export function createPhoneBridge(config) {
   const watchers = new Set(), ended = new Map(), tickets = new Map();
   const wss = new WebSocketServer({ noServer: true, maxPayload: 1024, perMessageDeflate: false });
   const enabled = Boolean(config.secret?.length >= 24 && config.assistantId);
-  let call = null;
+  let call = null, lastCall = null;
   const diagnostics = { received: 0, callerFinals: 0, lastEvent: null };
+  const callMetadata = target => ({ call_id: target.id, revision: target.revision,
+    caller_turns: target.turns.size, assessment_state: target.assessmentRevision === target.revision ? target.assessmentState : null,
+    alerta: target.detectResult?.revision === target.revision && !target.detectResult.error ? target.detectResult.value.alerta : null,
+    detection_ms: target.detectResult?.revision === target.revision && !target.detectResult.error ? target.detectDurationMs ?? null : null,
+    understanding_ms: target.understandResult?.revision === target.revision && !target.understandResult.error ? target.understandDurationMs ?? null : null,
+    hangup_requested: target.hangupRequested === true, hangup_revision: target.hangupRevision ?? null,
+    hangup_status: target.hangupStatus ?? null });
   const send = (ws, event) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(event)); };
   const emit = event => { if (!call) return; const e = { ...event, session_id: call.id }; if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.hangup_requested', 'call.hangup_result'].includes(e.type)) call.cache.set(e.type === 'transcript.update' ? `${e.type}:${e.id}` : e.type, e); for (const ws of watchers) send(ws, e); };
   function caption(speaker, at, text) {
@@ -58,18 +65,22 @@ export function createPhoneBridge(config) {
   async function stopForRisk(target, revision) {
     if (target.hangupRequested || !target.autoHangup) return;
     target.hangupRequested = true;
+    target.hangupRevision = revision;
     const requestId = randomUUID();
     emit({ type: 'call.hangup_requested', request_id: requestId, call_id: target.id, revision, reason: 'risk_detected' });
     // La APK puede cerrar el monitor al desconectar Telecom. La orden ya autorizada sigue en curso.
     try {
       const status = await (config.endCall ?? endVapiCall)(target, { apiKey: config.apiKey, assistantId: config.assistantId });
+      target.hangupStatus = status;
       if (target === call && !target.closed) emit({ type: 'call.hangup_result', request_id: requestId, status, reason: 'risk_detected' });
     } catch {
+      target.hangupStatus = 'failed';
       if (target === call && !target.closed) emit({ type: 'call.hangup_result', request_id: requestId, status: 'failed', message: 'Vapi no confirmó el corte. Cuelga desde el teléfono.' });
     }
   }
   function finish(reason) {
     if (!call) return;
+    lastCall = { ...callMetadata(call), end_reason: reason, ended_at: new Date().toISOString() };
     emit({ type: 'call.ended', reason });
     ended.set(call.id, Date.now()); clearTimeout(call.expiry); clearTimeout(call.timer);
     call.closed = true; call.text = ''; call.cache.clear(); call.turns.clear(); call.captions.clear(); call = null;
@@ -82,6 +93,7 @@ export function createPhoneBridge(config) {
       while (!target.closed && watchers.size && target[component + 'Revision'] < target.revision) {
         const revision = target.revision, text = target.text;
         target[component + 'Revision'] = revision;
+        const started = performance.now();
         try {
           const incident = { consentimiento_analisis: true, transcripcion: text };
           const result = component === 'detect'
@@ -89,18 +101,21 @@ export function createPhoneBridge(config) {
             : await (config.understand ?? understandIncident)(incident, { ...config.ai, selectSegments: true });
           if (target.closed || target !== call || revision !== target.revision || !watchers.size) continue;
           target[`${component}Result`] = { revision, value: result };
+          target[`${component}DurationMs`] = Math.round(performance.now() - started);
           if (component === 'detect') {
             emit({ type: 'alert.updated', alerta: result.alerta, probability: result.probabilidad, revision, provisional: true });
             emit({ type: 'risk.update', risk_percent: Math.round(result.probabilidad * 100), alerta: result.alerta, revision, reasons: ['Estimación provisional; no confirma una estafa.'], scam_type: null, impersonating: null, score_kind: 'probabilidad_de_alerta_no_calibrada' });
-            if (result.alerta === true) void stopForRisk(target, revision);
           } else emit({ type: 'understanding.update', analysis: result, revision });
         } catch {
           if (target === call && !target.closed && revision === target.revision) target[`${component}Result`] = { revision, error: true };
           if (target === call && !target.closed && revision === target.revision) emit({ type: 'error', component, message: 'Análisis telefónico no disponible. Este fallo no significa ausencia de riesgo.' });
         }
         if (target === call && !target.closed && revision === target.revision && watchers.size) {
-          const assessment = currentAssessment(target, text);
-          if (assessment) emit({ type: 'assessment.update', revision, assessment });
+          for (const event of assessmentEvents(target, text)) {
+            if (event.type === 'assessment.update') { target.assessmentState = event.assessment.estado; target.assessmentRevision = revision; }
+            emit(event);
+          }
+          if (component === 'detect' && target.detectResult?.value?.alerta === true) void stopForRisk(target, revision);
         }
       }
     } finally { target[component] = false; }
@@ -166,7 +181,7 @@ export function createPhoneBridge(config) {
     call.source = source; call.text = text; call.revision++;
     if (transcript) caption('caller', event.timestamp, event.transcript);
     else emit({ type: 'transcript.update', id: 'phone-caller', speaker: 'caller', text, sequence: 0, final: false, revision: call.revision, source });
-    if (!call.timer) call.timer = setTimeout(() => { const target = call; if (!target) return; target.timer = null; void analyze(target, 'detect'); void analyze(target, 'understand'); }, config.analysisMs ?? 2000).unref();
+    if (!call.timer) call.timer = setTimeout(() => { const target = call; if (!target) return; target.timer = null; void analyze(target, 'detect'); void analyze(target, 'understand'); }, config.analysisMs ?? 250).unref();
   }
   return {
     enabled,
@@ -176,7 +191,9 @@ export function createPhoneBridge(config) {
       if (pathname === '/v1/phone/diagnostics') {
         if (!equal(req.headers['x-voice-token'], config.accessCode)) respond(401, { error: 'No autorizado' });
         else if (req.method !== 'GET') respond(405, { error: 'GET requerido' });
-        else respond(200, { ...diagnostics, connectedMonitors: watchers.size, callActive: Boolean(call), revision: call?.revision ?? null, hangupRequested: call?.hangupRequested === true });
+        else respond(200, { ...diagnostics, connectedMonitors: watchers.size, callActive: Boolean(call), revision: call?.revision ?? null, hangupRequested: call?.hangupRequested === true,
+          currentCall: call ? callMetadata(call) : null,
+          lastCall: lastCall && Date.now() - Date.parse(lastCall.ended_at) < 600000 ? lastCall : null });
         return true;
       }
       if (req.method !== 'POST') { respond(405, { error: 'POST requerido' }); return true; }

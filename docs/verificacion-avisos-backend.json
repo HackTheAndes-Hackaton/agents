@@ -1,0 +1,110 @@
+{
+  "date_lima": "2026-10-17",
+  "backend_commit": "12a5a47",
+  "mobile_main_reviewed": "82e21f5",
+  "runtime_sha256": "71917fc78e39f2bbabb4c2793875c101bdee4b595d118caac76cb10e3778b521",
+  "agent": "andes-voz",
+  "status": "active",
+  "health_http": 200,
+  "chat_http": 200,
+  "unit_tests": {
+    "passed": 68,
+    "failed": 0
+  },
+  "scope": "Llamadas sintéticas por WebSocket de Vapi y monitor del mismo protocolo que usa la APK. No valida Android físico ni Entel.",
+  "cases": [
+    {
+      "call_id": "01a14d49-7b5f-7331-933b-cd4f880c5f15",
+      "provider_status": "ended",
+      "ended_reason": "assistant-ended-call-after-message-spoken",
+      "assistant_version": "v13",
+      "alert": true,
+      "understanding_received": true,
+      "assessment_events": [
+        {
+          "revision": 1,
+          "state": "alertar",
+          "explanation_pending": true,
+          "reason": "El detector pide revisar un posible riesgo; aún no hay una explicación textual disponible."
+        },
+        {
+          "revision": 1,
+          "state": "alertar",
+          "explanation_pending": false,
+          "reason": "Señales seleccionadas en el texto: una posible amenaza, presión para actuar de inmediato, restricciones para verificar por otro canal. No verifican una identidad ni confirman una estafa."
+        }
+      ],
+      "control_events": [
+        {
+          "type": "call.hangup_requested",
+          "request_id": "101256dd-2fc8-4ab6-8fc0-f08e842b1eb5",
+          "call_id": "01a14d49-7b5f-7331-933b-cd4f880c5f15",
+          "revision": 1,
+          "reason": "risk_detected",
+          "session_id": "01a14d49-7b5f-7331-933b-cd4f880c5f15"
+        },
+        {
+          "type": "call.hangup_result",
+          "request_id": "101256dd-2fc8-4ab6-8fc0-f08e842b1eb5",
+          "status": "requested",
+          "reason": "risk_detected",
+          "session_id": "01a14d49-7b5f-7331-933b-cd4f880c5f15"
+        },
+        {
+          "type": "call.ended",
+          "reason": "provider_ended",
+          "session_id": "01a14d49-7b5f-7331-933b-cd4f880c5f15"
+        }
+      ],
+      "passed": true,
+      "scenario": "riesgo",
+      "alert_before_hangup_order": true
+    },
+    {
+      "call_id": "01a14d4a-1955-7aad-a28b-f5ba7d958555",
+      "provider_status": "ended",
+      "ended_reason": "customer-ended-call",
+      "assistant_version": "v13",
+      "alert": false,
+      "understanding_received": true,
+      "assessment_events": [
+        {
+          "revision": 1,
+          "state": "inconcluso",
+          "explanation_pending": false,
+          "reason": "Falta información suficiente para interpretar este fragmento."
+        },
+        {
+          "revision": 3,
+          "state": "observar",
+          "explanation_pending": false,
+          "reason": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad."
+        }
+      ],
+      "control_events": [],
+      "passed": true,
+      "scenario": "legitimo",
+      "alert_before_hangup_order": null
+    }
+  ],
+  "risk_diagnostics": {
+    "call_id": "01a14d49-7b5f-7331-933b-cd4f880c5f15",
+    "revision": 1,
+    "caller_turns": 1,
+    "assessment_state": "alertar",
+    "alerta": true,
+    "detection_ms": 797,
+    "understanding_ms": 1330,
+    "hangup_requested": true,
+    "hangup_revision": 1,
+    "hangup_status": "requested",
+    "end_reason": "provider_ended",
+    "ended_at": "2026-10-18T04:34:08.767Z"
+  },
+  "limitations": [
+    "No se comprueba que una conferencia manual de Entel haya terminado.",
+    "La APK requiere un monitor autorizado conectado y presenta sus avisos locales.",
+    "El porcentaje no es una probabilidad calibrada ni el análisis verifica identidades.",
+    "Se comprobó saludo y recuperación de silencio por WebSocket, no en una conferencia física."
+  ]
+}

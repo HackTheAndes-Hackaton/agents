@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { assessCall, currentAssessment } from '../call-policy.mjs';
+import { assessCall, currentAssessment, assessmentEvents } from '../call-policy.mjs';
 
 const decision = (alerta = false) => ({ alerta, probabilidad: alerta ? 0.9 : 0.1 });
 function assess(text, tipo, d = decision()) {
@@ -49,4 +49,33 @@ test('descarta resultados atrasados; solo orienta con la misma revisión', () =>
   assert.equal(currentAssessment(room, 'No pido dinero.'), null);
   room.detectResult = { revision: 2, value: decision() };
   assert.equal(currentAssessment(room, 'No pido dinero.').estado, 'observar');
+});
+
+test('el aviso de la APK recibe motivo, porcentaje y estado de la misma revisión sin filtrar citas', () => {
+  const text = 'Soy Ana, necesito dinero.';
+  const target = { revision: 4, detectResult: { revision: 4, value: decision() }, understandResult: { revision: 4, value: { rol: 'comprension', evidencias: [{ tipo: 'peticion_pago', cita: text }] } } };
+  const [state, risk] = assessmentEvents(target, text);
+  assert.equal(state.assessment.estado, 'verificar');
+  assert.equal(state.revision, risk.revision);
+  assert.equal(risk.risk_percent, 10);
+  assert.equal(risk.alerta, false);
+  assert.match(risk.reasons[0], /petición de dinero/);
+  assert.doesNotMatch(risk.reasons[0], /Ana/);
+  assert.equal(risk.reasons[0], state.assessment.motivo);
+  target.detectResult = { revision: 4, error: true };
+  assert.deepEqual(assessmentEvents(target, text).map(e => e.type), ['assessment.update']);
+  target.revision = 5;
+  assert.deepEqual(assessmentEvents(target, text), []);
+});
+
+test('TRUE publica alertar sin esperar comprensión; no inventa citas ni oculta que falta explicación', () => {
+  const target = { revision: 2, detectResult: { revision: 2, value: decision(true) } };
+  const [state, risk] = assessmentEvents(target, 'Texto de ejemplo.');
+  assert.equal(state.assessment.estado, 'alertar');
+  assert.equal(state.explanation_pending, true);
+  assert.equal(state.assessment.explicacion_disponible, false);
+  assert.deepEqual(state.assessment.evidencia_textual, []);
+  assert.equal(risk.risk_percent, 90);
+  target.detectResult.value = decision(false);
+  assert.deepEqual(assessmentEvents(target, 'Texto de ejemplo.'), []);
 });
