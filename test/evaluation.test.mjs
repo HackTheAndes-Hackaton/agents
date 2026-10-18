@@ -43,3 +43,18 @@ test('corpus empareja aperturas sin adelantar la conducta decisiva y contiene in
   }
   assert.ok(cases.some(c => c.label === null));
 });
+test('contraejemplos son legítimos, únicos y se relacionan con estafas del corpus', async () => {
+  const base = JSON.parse(await readFile(new URL('../eval/casos-es-PE-v1.json', import.meta.url))).cases;
+  const { cases } = JSON.parse(await readFile(new URL('../eval/contraejemplos-es-PE-v1.json', import.meta.url)));
+  const ids = new Set([...base, ...cases].map(c => c.id));
+  assert.equal(ids.size, base.length + cases.length);
+  for (const c of cases) {
+    assert.equal(c.label, false);
+    assert.equal(c.alert_from_turn, null);
+    assert.ok(c.turns.length >= 2 && c.turns.every(t => typeof t === 'string' && t.trim()));
+    assert.ok(c.note && c.parece);
+    if (c.relacionado_con) assert.equal(base.find(b => b.id === c.relacionado_con)?.label, true);
+  }
+  const rows = cases.flatMap(c => c.turns.map((_, i) => ({ id: c.id, turn: i + 1, status: 'ok', alerta: false, probability: .1 })));
+  assert.equal(summarize(cases, rows).false_alert_call_rate, 0);
+});
