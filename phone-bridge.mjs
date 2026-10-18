@@ -40,7 +40,20 @@ export function createPhoneBridge(config) {
   let call = null;
   const diagnostics = { received: 0, callerFinals: 0, lastEvent: null };
   const send = (ws, event) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(event)); };
-  const emit = event => { if (!call) return; const e = { ...event, session_id: call.id }; if (['risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.hangup_requested', 'call.hangup_result'].includes(e.type)) call.cache.set(e.type === 'transcript.update' ? `${e.type}:${e.speaker}` : e.type, e); for (const ws of watchers) send(ws, e); };
+  const emit = event => { if (!call) return; const e = { ...event, session_id: call.id }; if (['risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.hangup_requested', 'call.hangup_result'].includes(e.type)) call.cache.set(e.type === 'transcript.update' ? `${e.type}:${e.id}` : e.type, e); for (const ws of watchers) send(ws, e); };
+  function caption(speaker, at, text) {
+    const id = `phone-${speaker}-${at}`;
+    if (call.captions.has(id) || (speaker === 'agent' && [...call.captions.values()].filter(line => line.speaker === 'agent').length >= 200)) return;
+    call.captions.set(id, { id, speaker, at, text, sequence: -1 });
+    const ordered = [...call.captions.values()].sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
+    // Una frase por burbuja; un evento atrasado reordena las existentes sin duplicarlas.
+    ordered.forEach((line, sequence) => {
+      if (line.sequence === sequence) return;
+      line.sequence = sequence;
+      emit({ type: 'transcript.update', id: line.id, speaker: line.speaker, text: line.text, sequence,
+        final: true, revision: call.revision, source: 'vapi_transcript_final' });
+    });
+  }
   async function stopForRisk(target, revision) {
     if (target.hangupRequested || !target.autoHangup) return;
     target.hangupRequested = true;
@@ -58,7 +71,7 @@ export function createPhoneBridge(config) {
     if (!call) return;
     emit({ type: 'call.ended', reason });
     ended.set(call.id, Date.now()); clearTimeout(call.expiry); clearTimeout(call.timer);
-    call.closed = true; call.text = ''; call.cache.clear(); call.turns.clear(); call = null;
+    call.closed = true; call.text = ''; call.cache.clear(); call.turns.clear(); call.captions.clear(); call = null;
     for (const [id, at] of ended) if (Date.now() - at > 15 * 60000) ended.delete(id);
   }
   async function analyze(target, component) {
@@ -100,7 +113,7 @@ export function createPhoneBridge(config) {
     if (transcript && event.role === 'assistant') {
       if (call?.id === id && (event.transcriptType === 'final' || event.type !== 'transcript') &&
           typeof event.transcript === 'string' && event.transcript.length <= 4000 && Number.isFinite(event.timestamp)) {
-        emit({ type: 'transcript.update', id: `phone-agent-${event.timestamp}`, speaker: 'agent', text: event.transcript, final: true, source: 'vapi_transcript_final' });
+        caption('agent', event.timestamp, event.transcript);
       }
       return;
     }
@@ -112,7 +125,7 @@ export function createPhoneBridge(config) {
     if (!watchers.size) return;
     if (call && call.id !== id) return;
     if (!call) {
-      call = { id, text: '', count: 0, at: -1, revision: 0, detectRevision: 0, understandRevision: 0, cache: new Map(), turns: new Map(), source: null, closed: false, autoHangup: [...watchers].some(ws => ws.autoHangup), controlUrl: null };
+      call = { id, text: '', count: 0, at: -1, revision: 0, detectRevision: 0, understandRevision: 0, cache: new Map(), turns: new Map(), captions: new Map(), source: null, closed: false, autoHangup: [...watchers].some(ws => ws.autoHangup), controlUrl: null };
       call.expiry = setTimeout(() => finish('analysis_expired'), config.ttlMs ?? 4 * 60000).unref();
       emit({ type: 'phone.call', call_id: id });
       emit({ type: 'agent.status', status: 'screening' });
@@ -144,7 +157,8 @@ export function createPhoneBridge(config) {
     if (text.length > 12000) { emit({ type: 'error', message: 'Límite de análisis alcanzado.' }); finish('text_limit'); return; }
     if (!text.trim() || text === call.text) return;
     call.source = source; call.text = text; call.revision++;
-    emit({ type: 'transcript.update', id: 'phone-caller', speaker: 'caller', text, sequence: 0, final: false, revision: call.revision, source });
+    if (transcript) caption('caller', event.timestamp, event.transcript);
+    else emit({ type: 'transcript.update', id: 'phone-caller', speaker: 'caller', text, sequence: 0, final: false, revision: call.revision, source });
     if (!call.timer) call.timer = setTimeout(() => { const target = call; if (!target) return; target.timer = null; void analyze(target, 'detect'); void analyze(target, 'understand'); }, config.analysisMs ?? 2000).unref();
   }
   return {

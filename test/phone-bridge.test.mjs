@@ -193,3 +193,35 @@ test('diagnóstico autenticado no devuelve texto ni URLs privadas', async t => {
  assert.equal(JSON.stringify(d).includes(text),false);
  assert.equal(JSON.stringify(d).includes(secret),false);
 });
+
+test('cada turno ocupa su lugar entre ambas voces y se conserva al reconectar', async t => {
+  const f = await fixture(t); await f.connect();
+  await f.post({ type: 'status-update', status: 'in-progress', call: { id, assistantId } });
+  const turn = (role, transcript, timestamp) => f.post({ type: 'transcript', transcriptType: 'final', role, transcript, timestamp, call: { id, assistantId } });
+  await turn('assistant', 'Hola.', 10);
+  await turn('user', 'Necesito ayuda.', 20);
+  await turn('assistant', '¿Qué necesitas?', 30);
+  await turn('user', 'Quiero verificar un pago.', 40);
+  await turn('user', 'Puedo esperar.', 25); // Entrega fuera de orden.
+  await until(() => f.inputs.at(-1) === 'Necesito ayuda.\nPuedo esperar.\nQuiero verificar un pago.');
+  const latest = () => [...new Map(f.events.filter(e => e.type === 'transcript.update').map(e => [e.id, e])).values()].sort((a,b) => a.sequence-b.sequence);
+  assert.deepEqual(latest().map(e => [e.speaker,e.text]), [
+    ['agent','Hola.'], ['caller','Necesito ayuda.'], ['caller','Puedo esperar.'], ['agent','¿Qué necesitas?'], ['caller','Quiero verificar un pago.'],
+  ]);
+  assert.ok(latest().every(e => e.final && !e.text.includes('\n')));
+  const before = f.events.length;
+  await turn('user', 'Quiero verificar un pago.', 40);
+  await delay(20);
+  assert.equal(f.events.slice(before).filter(e=>e.type==='transcript.update').length,0);
+  const replayStart=f.events.length; await f.connect();
+  await until(()=>f.events.slice(replayStart).filter(e=>e.type==='transcript.update').length===5);
+});
+
+test('el porcentaje conserva una probabilidad intermedia sin forzar alerta ni corte', async t => {
+  const f=await fixture(t,{detect:async()=>({alerta:false,probabilidad:.37})}); await f.connect(true);
+  await f.post(conversation('Petición ficticia por verificar.'));
+  await until(()=>f.events.some(e=>e.type==='risk.update'));
+  assert.equal(f.events.find(e=>e.type==='risk.update').risk_percent,37);
+  assert.equal(f.events.find(e=>e.type==='alert.updated').probability,.37);
+  assert.equal(f.events.some(e=>e.type==='call.hangup_requested'),false);
+});
