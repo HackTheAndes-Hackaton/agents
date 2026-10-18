@@ -2,7 +2,8 @@ import { timingSafeEqual, randomBytes, randomUUID } from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import { detectAlert } from './decisions.mjs';
 import { understandIncident } from './understanding.mjs';
-import { assessmentEvents } from './call-policy.mjs';
+import { assessmentEvents, currentAssessment } from './call-policy.mjs';
+import { createLivePhoneMcp } from './live-phone-mcp.mjs';
 import { startScribeComparison } from './scribe-sidecar.mjs';
 import { PhoneAudioWindow } from './phone-evidence.mjs';
 
@@ -37,13 +38,61 @@ export async function endVapiCall(target, config = {}) {
 }
 // Una línea de prueba, solo en memoria. Nunca recibe audio del teléfono Android.
 export function createPhoneBridge(config) {
+  if (config.liveEnabled && (typeof config.liveSecret !== 'string' || config.liveSecret.length < 24 || !config.assistantId || (!config.apiKey && !config.liveLookupCall))) throw Error('GPT-Live MCP requiere secreto, asistente y verificación de llamada configurados');
+  if (config.liveEnabled && (config.scribeEnabled || config.evidenceEnabled)) throw Error('GPT-Live Vapi no admite la escucha usada por Scribe o la captura; deshabilita explícitamente esas funciones antes de probar Live');
   const watchers = new Set(), ended = new Map(), tickets = new Map();
   const wss = new WebSocketServer({ noServer: true, maxPayload: 1024, perMessageDeflate: false });
   const enabled = Boolean(config.secret?.length >= 24 && config.assistantId);
   let call = null, lastCall = null;
+  const liveFichaComplete = target => ['nombre', 'entidad', 'motivo', 'peticion'].every(key => target.liveFicha?.[key]?.trim().length >= 3 && target.text.includes(target.liveFicha[key])) && new Set(Object.values(target.liveFicha ?? {})).size === 4;
+  function liveState(id) {
+    if (!call || call.id !== id || call.closed) return { status: 'ended', revision: null, identity_verified: false };
+    const assessment = currentAssessment(call, call.text);
+    return { status: assessment ? 'current' : 'pending', revision: call.revision,
+      assessment: assessment ? { estado: assessment.estado, orientacion: assessment.orientacion, motivo: assessment.motivo, alerta: assessment.alerta } : null,
+      missing_fields: ['nombre', 'entidad', 'motivo', 'peticion'].filter(key => !call.liveFicha?.[key]),
+      ready_to_answer: Boolean(assessment?.estado === 'observar' && assessment.alerta === false && liveFichaComplete(call)),
+      identity_verified: false, transcript_source: 'live_reasoner_report_not_audio_verified',
+      audio_evidence: 'unavailable_in_vapi_live', hangup_status: call.hangupStatus ?? null };
+  }
+  const liveMcp = createLivePhoneMcp({ enabled: config.liveEnabled, secret: config.liveSecret,
+    apiKey: config.apiKey, assistantId: config.assistantId, lookupCall: config.liveLookupCall,
+    canUse: id => enabled && watchers.size > 0 && !ended.has(id) && (!call || call.id === id),
+    authorize: id => {
+      if (!enabled || !watchers.size || ended.has(id) || (call && call.id !== id)) return false;
+      if (!call) ingest({ type: 'status-update', status: 'in-progress', call: { id, assistantId: config.assistantId } });
+      return call?.id === id && call.liveInput === true;
+    },
+    state: liveState,
+    evaluate: async (id, args) => {
+      if (call?.id !== id || args.revision_previa !== call.revision) return { status: 'rejected', revision: call?.revision, reason: 'revision_mismatch' };
+      const target = call;
+      target.text = args.transcripcion_interlocutor; target.liveFicha = args.ficha;
+      target.revision++; target.captionReceivedAt = Date.now(); target.cache.delete('call.ready_to_answer');
+      const revision = target.revision;
+      // Este texto lo reporta el reasoner; no se presenta como transcripción acústica verificada.
+      emit({ type: 'transcript.update', id: 'phone-live-reported', speaker: 'caller', text: target.text,
+        sequence: 0, final: false, revision, source: 'live_reasoner_report_not_audio_verified', identity_verified: false });
+      await Promise.all([analyze(target, 'detect'), analyze(target, 'understand')]);
+      if (call !== target || target.closed) return { status: 'ended', revision, identity_verified: false };
+      if (target.revision !== revision) return { status: 'superseded', revision, identity_verified: false };
+      return liveState(id);
+    },
+    hangup: async (id, revision, goodbye) => {
+      const voluntary = typeof goodbye === 'string' && call?.text.split('\n').map(line => line.trim()).filter(Boolean).at(-1) === goodbye.trim() &&
+        /^(?:por favor[,\s]*)?(?:cuelga(?: la llamada)?|termina (?:la|esta) llamada|quiero (?:terminar|colgar)(?: la llamada)?|hasta luego|adi[oó]s|chau)[.!?\s]*$/iu.test(goodbye.trim());
+      const risk = goodbye === null && call?.detectResult?.revision === revision && !call.detectResult.error && call.detectResult.value.alerta === true;
+      if (call?.id !== id || call.revision !== revision || !call.autoHangup || (!voluntary && !risk)) {
+        return { status: 'rejected', revision: call?.revision, reason: 'current_alert_and_owner_permission_required' };
+      }
+      const target = call;
+      await stopForRisk(target, revision, voluntary ? 'agent_ended' : 'risk_detected');
+      return { status: target.hangupStatus ?? 'pending', revision, confirmed: target.hangupStatus === 'confirmed' };
+    },
+  });
   const diagnostics = { received: 0, callerFinals: 0, lastEvent: null };
   const callMetadata = target => ({ call_id: target.id, revision: target.revision,
-    caller_turns: target.turns.size, assessment_state: target.assessmentRevision === target.revision ? target.assessmentState : null,
+    caller_turns: target.liveInput ? null : target.turns.size, input_mode: target.liveInput ? 'live_reasoner_report' : 'vapi_transcript', assessment_state: target.assessmentRevision === target.revision ? target.assessmentState : null,
     alerta: target.detectResult?.revision === target.revision && !target.detectResult.error ? target.detectResult.value.alerta : null,
     detection_ms: target.detectResult?.revision === target.revision && !target.detectResult.error ? target.detectDurationMs ?? null : null,
     understanding_ms: target.understandResult?.revision === target.revision && !target.understandResult.error ? target.understandDurationMs ?? null : null,
@@ -90,6 +139,10 @@ export function createPhoneBridge(config) {
     } finally { target.comparisonRunning = false; }
   }
   function compare(target) {
+    if (target.liveInput) {
+      if (config.scribeEnabled) emit({ type: 'comparison.status', status: 'unavailable_in_vapi_live', comparison_only: true });
+      return;
+    }
     if ((!config.scribeEnabled && !target.evidenceConsent) || !config.apiKey) return;
     target.comparisonRevision = 0; target.comparisonProcessed = 0; target.comparisonText = '';
     target.comparison = (config.startComparison ?? startScribeComparison)({ apiKey: config.apiKey,
@@ -168,6 +221,7 @@ export function createPhoneBridge(config) {
   }
   function finish(reason) {
     if (!call) return;
+    liveMcp.clearCall(call.id);
     call.comparison?.close();
     call.audio.clear();
     if (config.scribeEnabled && call.comparison) emit({ type: 'comparison.status', status: call.comparison.metadata().status, comparison_only: true });
@@ -206,6 +260,7 @@ export function createPhoneBridge(config) {
         }
         if (target === call && !target.closed && revision === target.revision && watchers.size) {
           for (const event of assessmentEvents(target, text)) {
+            if (event.type === 'call.ready_to_answer' && target.liveInput && !liveFichaComplete(target)) continue;
             if (event.type === 'assessment.update') { target.assessmentState = event.assessment.estado; target.assessmentRevision = revision; }
             emit(event);
           }
@@ -237,12 +292,14 @@ export function createPhoneBridge(config) {
         caption('agent', event.timestamp, event.transcript);
         // Respaldo determinista si el modelo pronuncia el cierre sin ejecutar endCall.
         // Solo una despedida explícita completa del asistente; no frases del llamante ni negaciones.
-        if (/^(?:voy a (?:terminar|colgar) la llamada|te voy a cortar)[.!…\s]*$/iu.test(event.transcript.trim())) void stopForRisk(call, call.revision, 'agent_ended');
+        if (!call.liveInput && /^(?:voy a (?:terminar|colgar) la llamada|te voy a cortar)[.!…\s]*$/iu.test(event.transcript.trim())) void stopForRisk(call, call.revision, 'agent_ended');
       }
       return;
     }
     // Los parciales pueden omitir todavía un «no». Solo analizar turnos completos.
     if (transcript && (event.role !== 'user' || (event.transcriptType !== 'final' && event.type !== 'transcript[transcriptType="final"]') || typeof event.transcript !== 'string' || !event.transcript.trim())) return;
+    // No mezclar reportes MCP y snapshots del proveedor en el modo Live.
+    if (config.liveEnabled && (transcript || event.type === 'conversation-update')) return;
     const complete = event.type === 'end-of-call-report' || (event.type === 'status-update' && event.status === 'ended');
     if (complete) {
       if (call?.id === id) {
@@ -258,7 +315,7 @@ export function createPhoneBridge(config) {
     if (!watchers.size) return;
     if (call && call.id !== id) return;
     if (!call) {
-      call = { id, text: '', count: 0, at: -1, revision: 0, detectRevision: 0, understandRevision: 0, cache: new Map(), turns: new Map(), captions: new Map(), pendingAcks: new Map(), delivery: [], source: null, closed: false, autoHangup: [...watchers].some(ws => ws.autoHangup), controlUrl: null,
+      call = { id, liveInput: config.liveEnabled === true, text: '', count: 0, at: -1, revision: 0, detectRevision: 0, understandRevision: 0, cache: new Map(), turns: new Map(), captions: new Map(), pendingAcks: new Map(), delivery: [], source: null, closed: false, autoHangup: [...watchers].some(ws => ws.autoHangup), controlUrl: null,
         evidenceConsent: config.evidenceEnabled === true && [...watchers].some(ws => ws.evidenceConsent), audio: new PhoneAudioWindow() };
       call.expiry = setTimeout(() => finish('analysis_expired'), config.ttlMs ?? 4 * 60000).unref();
       emit({ type: 'phone.call', call_id: id });
@@ -298,7 +355,9 @@ export function createPhoneBridge(config) {
   }
   return {
     enabled,
+    liveMode: config.liveEnabled === true,
     async http(req, res, pathname) {
+      if (await liveMcp.http(req, res, pathname)) return true;
       if (!['/v1/phone/vapi', '/v1/phone/monitor', '/v1/phone/diagnostics'].includes(pathname)) return false;
       const respond = (status, data) => { res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(data)); };
       if (pathname === '/v1/phone/diagnostics') {
@@ -366,6 +425,6 @@ export function createPhoneBridge(config) {
       });
       return true;
     },
-    close() { finish('server_closing'); tickets.clear(); for (const ws of watchers) ws.close(); wss.close(); },
+    close() { finish('server_closing'); liveMcp.close(); tickets.clear(); for (const ws of watchers) ws.close(); wss.close(); },
   };
 }

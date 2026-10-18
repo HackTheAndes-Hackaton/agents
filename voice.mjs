@@ -30,7 +30,9 @@ export async function createVoiceServer(config = {}) {
   const store=config.evidenceStore ?? config.evidenceMcp ?? (process.env.TISKZ_AUDIO_API_URL ? evidenceApiClient() : evidenceClient());
   const phone = createPhoneBridge({ accessCode, ai: { ...ai, threshold }, secret: config.vapiSecret ?? process.env.VAPI_WEBHOOK_SECRET, assistantId: config.vapiAssistantId ?? process.env.VAPI_ASSISTANT_ID, apiKey: config.vapiApiKey ?? process.env.VAPI_API_KEY, number: process.env.VAPI_PHONE_NUMBER, detect: config.detect, understand: config.understand, analysisMs: config.phoneAnalysisMs,
     evidenceStore: store, evidenceEnabled: config.phoneEvidenceEnabled ?? process.env.VAPI_PHONE_EVIDENCE_ENABLED === 'true', evidenceSimulated: config.phoneEvidenceSimulated ?? process.env.VAPI_PHONE_EVIDENCE_SIMULATED === 'true',
-    scribeEnabled: config.scribeEnabled ?? process.env.VAPI_SCRIBE_SHADOW_ENABLED === 'true' });
+    scribeEnabled: config.scribeEnabled ?? process.env.VAPI_SCRIBE_SHADOW_ENABLED === 'true',
+    liveEnabled: config.liveEnabled ?? process.env.VAPI_LIVE_MCP_ENABLED === 'true',
+    liveSecret: config.liveSecret ?? process.env.VAPI_LIVE_MCP_SECRET });
   const emit = (room, event) => {
     const payload = { ...event, session_id: room.id, timestamp: new Date().toISOString() };
     if (event.type === 'transcript.update' && event.id) room.transcripts.set(event.id, payload);
@@ -170,7 +172,7 @@ export async function createVoiceServer(config = {}) {
       const url = new URL(req.url, 'http://localhost');
       if (await evidence(req,res,url.pathname)) return;
       if (await phone.http(req, res, url.pathname)) return;
-      if (req.method === 'GET' && url.pathname === '/health') return send(200, { ok: true, role: 'voz', webrtc: true, models: { transcription: 'gpt-live-transcribe', understanding: 'gpt-4.1-mini', detection: 'gpt-6-luna', assistant: 'gpt-live-1', voice: 'marin' }, configured: Boolean(apiKey) });
+      if (req.method === 'GET' && url.pathname === '/health') return send(200, { ok: true, role: 'voz', webrtc: true, models: { transcription: 'gpt-live-transcribe', understanding: 'gpt-4.1-mini', detection: 'gpt-6-luna', assistant: 'gpt-live-1', voice: 'marin', phone_assistant_configured: phone.liveMode ? 'gpt-live-1' : 'gpt-realtime-2' }, live_phone_mcp_configured: phone.liveMode, configured: Boolean(apiKey) });
       const staticName = url.searchParams.get('asset') ?? (url.pathname === '/' ? 'index.html' : url.pathname.slice(1));
       if (req.method === 'GET' && files.has(staticName)) {
         res.writeHead(200, { 'Content-Type': staticName.endsWith('.js') ? 'text/javascript; charset=utf-8' : staticName.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' wss:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'" });
