@@ -12,7 +12,7 @@ Marin usa `endCall` y la frase concreta «Voy a terminar la llamada». `endCallP
 - Búfer solo en RAM, máximo 10 s; se borra al terminar o desconectar al propietario. No se graba la llamada completa. La instantánea de una alerta ya autorizada puede terminar de guardarse después del corte.
 - Alerta del detector principal: guarda una instantánea WAV PCM16 mono 16 kHz mediante `guardar_fragmento` (API HTTP o MCP ya configurado), sin esperar el almacenamiento para terminar la llamada. El resample usa filtro para reducir alias.
 - El contrato actual solo admite `source:provider_mixed` para audio del proveedor. Se conserva esa etiqueta compatible y `speaker:unknown`, pendiente de revisión, aunque el búfer contiene únicamente el canal customer. En conferencia dicho canal puede contener a más de una persona; no acredita un hablante único.
-- La API crea un incidente de audio para la sesión en `org_vecinal`. Devuelve `fragment_id` e `incident_id` para localizarlo; no se adjunta automáticamente al incidente de historial creado de forma independiente por la APK.
+- La API crea un incidente de audio para la sesión en `org_uav`. Devuelve `fragment_id` e `incident_id` para localizarlo; no se adjunta automáticamente al incidente de historial creado de forma independiente por la APK.
 - `audio.capture_result` usa `saving`, `saved` o `failed`. `saved` requiere un ID confirmado por el almacenamiento. El cierre puede ocurrir antes de entregar la confirmación a la APK; el resultado queda en diagnósticos de la última llamada durante diez minutos y en el panel.
 - Las llamadas telefónicas usan `simulated:false`; las pruebas pueden configurar `VAPI_PHONE_EVIDENCE_SIMULATED=true`. La opción antigua de evidencia WebRTC no cambia esta clasificación.
 

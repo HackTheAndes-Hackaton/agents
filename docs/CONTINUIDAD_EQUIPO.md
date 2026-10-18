@@ -8,7 +8,7 @@ Los PR de agents #9 y mobile #12 están fusionados en `main` de sus respectivos 
 - Vapi mantiene la voz marin. El backend combina comprensión y detección, y publica transcripciones, estados y órdenes por WebSocket.
 - `call.ready_to_answer` corresponde a una revisión actual sin alerta y con estado `observar`. No verifica identidad. Un nuevo turno del llamante invalida la revisión anterior.
 - `call.hangup_requested` admite `risk_detected` y `agent_ended`. La APK puede cerrar ambas partes de la conferencia; una despedida del modelo no basta por sí sola.
-- Conservación telefónica opcional: hasta 10 s del canal customer, WAV mono PCM16 a 16 kHz, ante alerta principal y con consentimiento separado. La subida usa la API/MCP existente en `org_vecinal` y no espera para cortar.
+- Conservación telefónica opcional: hasta 10 s del canal customer, WAV mono PCM16 a 16 kHz, ante alerta principal y con consentimiento separado. La subida usa la API/MCP existente en `org_uav` y no espera para cortar.
 - Scribe está en paralelo experimental: compara transcripciones y análisis; sus resultados no controlan el corte principal.
 
 ## Verificado y límites de la prueba
