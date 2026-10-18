@@ -75,3 +75,20 @@ test('no abre transcriptor si no hay dos canales identificados', async () => {
   await tick(); sockets[0].emit('message', Buffer.from(JSON.stringify({ type: 'start', encoding: 'linear16', container: 'raw', sampleRate: 24000, channels: 1 })), false);
   assert.equal(requests, 1); assert.ok(statuses.includes('unsupported_audio_format')); s.close();
 });
+
+test('captura customer sin crear otra sesión de transcripción cuando Scribe está apagado', async () => {
+  const sockets = [], frames = []; let requests = 0;
+  class Socket extends EventEmitter {
+    readyState = 1;
+    constructor() { super(); sockets.push(this); }
+    close() { this.readyState = 3; this.emit('close'); }
+  }
+  const s = startScribeComparison({ apiKey: 'fake', callId: id, assistantId: 'test', WebSocket: Socket, transcribe: false,
+    onAudio: (pcm, rate) => frames.push({ pcm: Buffer.from(pcm), rate }),
+    fetch: async () => { requests++; return { ok: true, json: async () => ({ id, assistantId: 'test', monitor: { listenUrl: url(id, 'listen') } }) }; } });
+  await tick(); sockets[0].emit('message', Buffer.from(JSON.stringify({ type: 'start', encoding: 'linear16', container: 'raw', sampleRate: 24000, channels: 2 })), false);
+  sockets[0].emit('message', Buffer.from([7, 0, 99, 0, 8, 0, 99, 0]), true);
+  assert.equal(requests, 1); assert.equal(sockets.length, 1);
+  assert.deepEqual(frames[0], { pcm: Buffer.from([7, 0, 8, 0]), rate: 24000 });
+  s.close(); sockets[0].emit('message', Buffer.from([1, 0, 9, 0]), true); assert.equal(frames.length, 1);
+});

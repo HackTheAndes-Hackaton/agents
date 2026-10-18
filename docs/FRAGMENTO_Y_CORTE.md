@@ -2,7 +2,7 @@
 
 La decisión de finalizar tiene efectos distintos: Vapi cierra el agente y Android debe cerrar también la llamada original. `call.hangup_requested` admite `risk_detected` y `agent_ended`; conserva la vinculación a la llamada, la autorización de corte, revisión e idempotencia. Un `call.ended` por desconexión de pantalla no autoriza desconectar Telecom. La APK 0.4.6 admite ambos motivos; una APK anterior solo entiende el de riesgo.
 
-Marin usa `endCall` y la frase concreta «Voy a terminar la llamada». `endCallPhrases` configura un segundo mecanismo en Vapi. El servidor respalda las despedidas explícitas completas del asistente y los estados de proveedor `assistant-ended-call` y `assistant-said-end-call-phrase`. No interpreta las frases del llamante como órdenes de corte. Son mecanismos de ejecución, además del prompt.
+Marin usa `endCall` y la frase concreta «Voy a terminar la llamada». `endCallPhrases` configura un segundo mecanismo en Vapi. El servidor respalda las despedidas explícitas completas del asistente y los estados de proveedor `assistant-ended-call`, `assistant-ended-call-after-message-spoken` y `assistant-said-end-call-phrase`. No interpreta las frases del llamante como órdenes de corte. Son mecanismos de ejecución, además del prompt.
 
 ## Audio conservado
 

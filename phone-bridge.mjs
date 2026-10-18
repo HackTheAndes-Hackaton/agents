@@ -159,16 +159,19 @@ export function createPhoneBridge(config) {
       const status = await (config.endCall ?? endVapiCall)(target, { apiKey: config.apiKey, assistantId: config.assistantId });
       target.hangupStatus = status;
       if (target === call && !target.closed) emit({ type: 'call.hangup_result', request_id: requestId, status, reason });
+      else if (lastCall?.call_id === target.id && lastCall.hangup_status !== 'confirmed') lastCall.hangup_status = status;
     } catch {
       target.hangupStatus = 'failed';
       if (target === call && !target.closed) emit({ type: 'call.hangup_result', request_id: requestId, status: 'failed', message: 'Vapi no confirmó el corte. Cuelga desde el teléfono.' });
+      else if (lastCall?.call_id === target.id && lastCall.hangup_status !== 'confirmed') lastCall.hangup_status = 'failed';
     }
   }
   function finish(reason) {
     if (!call) return;
     call.comparison?.close();
     call.audio.clear();
-    if (call.comparison) emit({ type: 'comparison.status', status: call.comparison.metadata().status, comparison_only: true });
+    if (config.scribeEnabled && call.comparison) emit({ type: 'comparison.status', status: call.comparison.metadata().status, comparison_only: true });
+    if (reason === 'provider_ended' && call.hangupRequested) call.hangupStatus = 'confirmed';
     lastCall = { ...callMetadata(call), end_reason: reason, ended_at: new Date().toISOString() };
     emit({ type: 'call.ended', reason });
     ended.set(call.id, Date.now()); clearTimeout(call.expiry); clearTimeout(call.timer); clearTimeout(call.comparisonTimer);
@@ -219,7 +222,12 @@ export function createPhoneBridge(config) {
     for (const [id, at] of ended) if (Date.now() - at > 15 * 60000) ended.delete(id);
     while (ended.size > 256) ended.delete(ended.keys().next().value);
     const id = event?.call?.id;
-    if (!/^[a-f0-9-]{36}$/i.test(id ?? '') || (event.call.assistantId ?? event.assistant?.id) !== config.assistantId || ended.has(id)) return;
+    if (!/^[a-f0-9-]{36}$/i.test(id ?? '') || (event.call.assistantId ?? event.assistant?.id) !== config.assistantId) return;
+    if (ended.has(id)) {
+      if ((event.type === 'end-of-call-report' || (event.type === 'status-update' && event.status === 'ended')) &&
+          lastCall?.call_id === id && lastCall.hangup_requested) lastCall.hangup_status = 'confirmed';
+      return;
+    }
     const transcript = ['transcript', 'transcript[transcriptType="final"]'].includes(event.type);
     if (!['status-update', 'conversation-update', 'end-of-call-report'].includes(event.type) && !transcript) return;
     // Mostrar la voz de marin sin pasarla al detector como si la hubiera dicho quien llama.
@@ -238,9 +246,12 @@ export function createPhoneBridge(config) {
     const complete = event.type === 'end-of-call-report' || (event.type === 'status-update' && event.status === 'ended');
     if (complete) {
       if (call?.id === id) {
-        if (['assistant-ended-call', 'assistant-said-end-call-phrase'].includes(event.endedReason ?? event.call.endedReason)) void stopForRisk(call, call.revision, 'agent_ended');
+        if (['assistant-ended-call', 'assistant-ended-call-after-message-spoken', 'assistant-said-end-call-phrase'].includes(event.endedReason ?? event.call.endedReason)) void stopForRisk(call, call.revision, 'agent_ended');
         finish('provider_ended');
-      } else ended.set(id, Date.now());
+      } else {
+        ended.set(id, Date.now());
+        if (lastCall?.call_id === id && lastCall.hangup_requested) lastCall.hangup_status = 'confirmed';
+      }
       return;
     }
     // Desconectar la pantalla revoca el análisis de nuevos fragmentos.

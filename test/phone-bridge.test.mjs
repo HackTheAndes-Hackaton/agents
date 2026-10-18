@@ -366,7 +366,7 @@ test('cierre hablado del agente ordena cortar ambas patas, nunca por palabras de
 test('endCall del proveedor también cierra Telecom antes de emitir call.ended, incluso sin turno de usuario', async t => {
   const f = await fixture(t, { endCall: async () => 'already_ended' }); await f.connect(true);
   await f.post({ type: 'status-update', status: 'in-progress', call: { id, assistantId } });
-  await f.post({ type: 'status-update', status: 'ended', endedReason: 'assistant-ended-call', call: { id, assistantId } });
+  await f.post({ type: 'status-update', status: 'ended', endedReason: 'assistant-ended-call-after-message-spoken', call: { id, assistantId } });
   await until(() => f.events.some(e => e.type === 'call.ended'));
   const command = f.events.find(e => e.type === 'call.hangup_requested');
   assert.equal(command.reason, 'agent_ended'); assert.equal(command.revision, 0);
@@ -422,4 +422,14 @@ test('revocar el monitor propietario borra la ventana aunque quede un observador
   audio.onAudio(Buffer.alloc(48000, 2), 24000); owner.close(); await once(owner, 'close'); await delay(15);
   audio.onAudio(Buffer.alloc(48000, 2), 24000); await f.post(finalTurn('Amenaza ficticia', 1));
   await until(() => f.inputs.length === 1); assert.equal(saves, 0);
+});
+
+test('confirmación tardía del proveedor corrige el estado de corte tras cerrar el monitor', async t => {
+  const f = await fixture(t, { endCall: async () => { throw Error('already_closing'); } });
+  const owner = await f.connect(true); await f.post(finalTurn('Amenaza ficticia', 1));
+  await until(() => f.events.some(e => e.type === 'call.hangup_result' && e.status === 'failed'));
+  owner.close(); await once(owner, 'close'); await delay(15);
+  await f.post({ type: 'status-update', status: 'ended', call: { id, assistantId } });
+  const response = await fetch(f.base + '/v1/phone/diagnostics', { headers: { 'X-Voice-Token': code } });
+  assert.equal((await response.json()).lastCall.hangup_status, 'confirmed');
 });
