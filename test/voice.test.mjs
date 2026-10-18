@@ -27,7 +27,7 @@ test('Voz: exige acceso y consentimiento, y sirve la interfaz sin credenciales',
   assert.equal((await f.post('/v1/sessions', {})).status, 400);
   const proxied = await fetch(f.base + '/v1/sessions', { method: 'POST', headers: { 'X-Voice-Token': code, 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimiento_analisis: true }) });
   assert.equal(proxied.status, 201);
-  const html = await (await fetch(f.base)).text(); assert.ok(html.includes('Tiskz')); assert.ok(!html.includes(code));
+  const html = await (await fetch(f.base)).text(); assert.ok(html.includes('PhoneWard')); assert.ok(!html.includes(code));
 });
 
 test('Voz: observador no inyecta texto, sesiones aisladas y final duplicado no cobra de nuevo', async t => {
