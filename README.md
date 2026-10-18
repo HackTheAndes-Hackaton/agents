@@ -82,3 +82,12 @@ La APK puede autorizar por separado `consentimiento_conservacion: true` al crear
 Configura en el servidor `TISKZ_MCP_URL`, `TISKZ_API_KEY` y `TISKZ_ORG_ID=org_vecinal`. El MCP se implementa en el repositorio web, sobre Postgres, y debe desplegarse antes de probar el guardado. La clave de la API nunca llega al cliente. El backend fija organización, sesión, procedencia del micrófono y estimación provisional; no acepta nombres, números o puntuaciones inyectados en la carga del cliente.
 
 Las herramientas son `guardar_fragmento`, `listar_fragmentos` y `escuchar_fragmento`. Conservar un WAV no crea una identidad ni un embedding. Esta primera conexión cubre el micrófono WebRTC; las alertas telefónicas de Vapi todavía no aportan audio original. SMS y corte remoto no se ejecutan por estas herramientas.
+
+
+## Orden automática de captura
+
+Las nuevas APK anuncian `audio_capture_protocol: 1` al crear una sesión con conservación autorizada. Una detección TRUE de la revisión actual produce `audio.capture_requested` únicamente en el WebSocket productor: `session_id`, `request_id` UUID, `revision`, `window_ms: 10000` y `expires_at` (30 s). No se dispara con FALSE, errores, análisis obsoleto ni sin autorización. Se confirma una captura automática por sesión; tras fallos puede solicitarse de nuevo en una revisión posterior, hasta tres solicitudes.
+
+La APK responde `audio.capture_received`, toma los últimos segundos disponibles al recibir la orden y sube WAV usando ese `request_id`. No equivale a localizar exactamente la frase que originó el análisis. Si no hay audio o está ocupada responde `audio.capture_failed`. El servidor emite `audio.capture_result` (`saved` y `fragment_id`, o `failed` y motivo) después de consultar el almacenamiento. El cliente no puede confirmar por sí mismo que quedó guardado. Las órdenes vencidas no se ejecutan; un reintento de subida conserva su ID y la puntuación de la detección que lo originó.
+
+Con `TISKZ_AUDIO_API_URL=https://web-repo-xi.vercel.app/api/v1/audio-fragments` el backend usa la API HTTP directamente. Sin esa configuración mantiene compatibilidad con MCP. Ambas entradas comparten el mismo servicio de persistencia en el panel. La clave global nunca se distribuye a la APK. Para estas pruebas `TISKZ_EVIDENCE_SIMULATED=true` separa la evidencia de las llamadas reales.
