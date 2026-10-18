@@ -9,6 +9,32 @@ const code = 'test-owner-private-code';
 const assistantId = 'test-assistant';
 const id = '11111111-2222-3333-4444-555555555555';
 const delay = ms => new Promise(r => setTimeout(r, ms));
+
+test('Scribe compara sin reemplazar la alerta principal ni autorizar un corte; confirma recepción APK', async t => {
+  let comparison, closed = 0;
+  const f = await fixture(t, { apiKey: 'fake', scribeEnabled: true,
+    startComparison: options => { comparison = options; return { close: () => closed++, metadata: () => ({ status: 'test' }) }; },
+    detect: async incident => ({ alerta: incident.transcripcion.includes('amenaza'), probabilidad: incident.transcripcion.includes('amenaza') ? .99 : .01 }) });
+  const ws = await f.connect(true);
+  await f.post(conversation('Reunión de prueba.'));
+  await until(() => f.events.some(e => e.type === 'alert.updated'));
+  comparison.onCaption({ id: 'scribe-0', sequence: 0, text: 'amenaza ficticia', final: false });
+  await delay(15); assert.equal(f.events.some(e => e.type === 'comparison.alert'), false);
+  comparison.onCaption({ id: 'scribe-0', sequence: 0, text: 'amenaza ficticia', final: true });
+  await until(() => f.events.some(e => e.type === 'comparison.alert'));
+  const e = f.events.find(e => e.type === 'comparison.alert');
+  assert.equal(e.alerta, true); assert.equal(e.comparison_only, true);
+  assert.equal(f.events.find(e => e.type === 'alert.updated').alerta, false);
+  assert.equal(f.events.some(e => e.type === 'call.hangup_requested'), false);
+  ws.send(JSON.stringify({ type: 'event.received', event_id: e.event_id, session_id: id }));
+  await delay(20);
+  const r = await fetch(f.base + '/v1/phone/diagnostics', { headers: { 'X-Voice-Token': code } });
+  const d = await r.json(); assert.equal(d.currentCall.delivery[0].event_type, 'comparison.alert');
+  await f.post({ type: 'status-update', status: 'ended', call: { id, assistantId } });
+  assert.equal(closed, 1);
+  comparison.onCaption({ id: 'scribe-1', sequence: 1, text: 'Tardío', final: true });
+  assert.equal(f.events.some(e => e.text === 'Tardío'), false);
+});
 async function fixture(t, overrides = {}) {
   const inputs = [], events = [];
   const bridge = createPhoneBridge({ accessCode: code, secret, assistantId, ai: {}, analysisMs: 5,
