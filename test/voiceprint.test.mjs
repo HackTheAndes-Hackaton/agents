@@ -14,7 +14,7 @@ const code = 'test-owner-private-code';
 const assistantId = 'test-assistant';
 const id = '11111111-2222-3333-4444-555555555555';
 const delay = ms => new Promise(r => setTimeout(r, ms));
-async function until(predicate) { for (let i = 0; i < 200; i++) { if (predicate()) return; await delay(10); } assert.fail('No llegó el evento esperado'); }
+async function until(predicate) { for (let i = 0; i < 200; i++) { if (await predicate()) return; await delay(10); } assert.fail('No llegó el evento esperado'); }
 const conversation = (text, timestamp = 1) => ({ type: 'conversation-update', timestamp, call: { id, assistantId }, messages: [{ role: 'user', message: text }] });
 
 // Voz ficticia: un tono continuo cuenta como habla; ceros cuentan como silencio.
@@ -55,14 +55,15 @@ async function fixture(t, { voiceprint = null, probability = 0.95, alert = true 
   t.after(async () => { bridge.close(); await new Promise(r => server.close(r)); });
   async function connect(extra = {}) {
     const response = await fetch(base + '/v1/phone/monitor', { method: 'POST', headers: { 'X-Voice-Token': code, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ consentimiento_analisis: true, consentimiento_corte_automatico: true, consentimiento_huella_voz: true, numero_llamante: '+51987654321', ...extra }) });
+      body: JSON.stringify({ consentimiento_analisis: true, consentimiento_corte_automatico: true, consentimiento_huella_voz: true, voice_block_protocol: 1, numero_llamante: '+51987654321', ...extra }) });
     const { ticket } = await response.json();
     const ws = new WebSocket(base.replace('http:', 'ws:') + '/ws/calls?channel=phone&ticket=' + ticket);
     ws.on('message', raw => events.push(JSON.parse(raw)));
     await once(ws, 'open'); t.after(() => ws.terminate()); return ws;
   }
   const post = message => fetch(base + '/v1/phone/vapi', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Vapi-Secret': secret }, body: JSON.stringify({ message }) });
-  return { events, controls, hangups, connect, post, audio: () => audio, comparisons: () => comparisons };
+  const diagnostics = async () => (await fetch(base+'/v1/phone/diagnostics', { headers: { 'X-Voice-Token': code } })).json();
+  return { events, controls, hangups, connect, post, audio: () => audio, comparisons: () => comparisons, diagnostics };
 }
 
 test('Sin VOICEPRINT_ENABLED el flujo sigue igual: no escucha audio y corta al alertar', async t => {
@@ -78,7 +79,7 @@ test('Sin VOICEPRINT_ENABLED el flujo sigue igual: no escucha audio y corta al a
 test('La voz se compara y avisa si se parece a un estafador guardado, sin guardar la huella', async t => {
   const vp = fakeVoiceprint({ best: 0.86 });
   const f = await fixture(t, { voiceprint: vp.value, alert: false, probability: 0.1 });
-  await f.connect();
+  await f.connect({ consentimiento_corte_automatico: false });
   await f.post(conversation('Hola, te llamo por un paquete.'));
   await until(() => f.audio());
   f.audio().onAudio(tone(7), 16000);
@@ -130,18 +131,68 @@ test('Alerta sin certeza alta: corta como siempre y no guarda voz', async t => {
   assert.equal(vp.enrolls.length, 0);
 });
 
-test('Una voz reconocida con fuerza confirma la estafa aunque la alerta tenga menos certeza', async t => {
+test('Una coincidencia fuerte solicita corte y bloqueo antes del primer texto sin declarar una estafa', async t => {
   const vp = fakeVoiceprint({ best: 0.9 });
-  const f = await fixture(t, { voiceprint: vp.value, probability: 0.7 });
+  const f = await fixture(t, { voiceprint: vp.value, probability: 0.1, alert: false });
   await f.connect();
   // La llamada empieza y la voz se reconoce antes de que el detector alerte.
   await f.post({ type: 'status-update', status: 'in-progress', call: { id, assistantId } });
   await until(() => f.audio());
   f.audio().onAudio(tone(7), 16000);
-  await until(() => f.events.some(e => e.type === 'voice.match'));
-  await f.post(conversation('Necesito el código que te llegó.'));
-  await until(() => f.events.some(e => e.type === 'voice.collecting' && e.status === 'started'));
-  assert.equal(f.events.some(e => e.type === 'call.hangup_requested'), false);
+  await until(() => f.events.some(e => e.type === 'call.hangup_requested'));
+  const order = f.events.find(e => e.type === 'call.hangup_requested');
+  assert.equal(order.reason, 'voice_match'); assert.equal(order.block_number, true);
+  assert.equal(order.revision, 0); assert.equal(order.identity_verified, false);
+  assert.ok(f.events.findIndex(e => e.type === 'voice.match') < f.events.indexOf(order));
+  assert.equal(f.events.some(e => e.type === 'alert.updated' && e.alerta === true), false);
+  assert.equal(vp.enrolls.length, 0); assert.equal(f.hangups.length, 1);
+});
+
+test('La voz fuerte bloquea aunque el contenido esté en observar, sin inflar su porcentaje', async t => {
+  const vp = fakeVoiceprint({ best: .92 });
+  const f = await fixture(t, { voiceprint: vp.value, probability: .1, alert: false });
+  await f.connect(); await f.post(conversation('Quiero coordinar una reunión ficticia.'));
+  await until(() => f.events.some(e => e.type === 'risk.update'));
+  f.audio().onAudio(tone(7),16000);
+  await until(() => f.events.some(e => e.type === 'call.hangup_requested'));
+  assert.equal(f.events.find(e => e.type === 'risk.update').risk_percent,10);
+  assert.equal(f.events.find(e => e.type === 'call.hangup_requested').reason,'voice_match');
+  assert.equal(vp.enrolls.length,0);
+});
+
+test('Una APK anterior recibe la coincidencia pero no una orden de bloqueo que no puede ejecutar', async t => {
+  const vp=fakeVoiceprint({best:.94});const f=await fixture(t,{voiceprint:vp.value,alert:false,probability:.1});
+  await f.connect({voice_block_protocol:0});await f.post({type:'status-update',status:'in-progress',call:{id,assistantId}});
+  await until(()=>f.audio());f.audio().onAudio(tone(7),16000);
+  await until(()=>f.events.some(e=>e.type==='voice.match'));
+  assert.equal(f.hangups.length,0);
+});
+
+test('Una similitud intermedia solo avisa; una respuesta sin casos no autoriza un bloqueo', async t => {
+  const vp = fakeVoiceprint({ best: .75 });
+  const f = await fixture(t, { voiceprint: vp.value, probability:.1, alert:false });
+  await f.connect(); await f.post({type:'status-update',status:'in-progress',call:{id,assistantId}});
+  await until(() => f.audio());f.audio().onAudio(tone(7),16000);
+  await until(() => f.events.some(e => e.type==='voice.match'));
+  assert.equal(f.events.find(e => e.type==='voice.match').strong,false);assert.equal(f.hangups.length,0);
+  const empty = fakeVoiceprint({best:.95});empty.value.api.search=async()=>({best_similarity:.95,cases:0,reviewed_cases:0});
+  const g=await fixture(t,{voiceprint:empty.value,probability:.1,alert:false});
+  await g.connect();await g.post({type:'status-update',status:'in-progress',call:{id,assistantId}});
+  await until(()=>g.audio());g.audio().onAudio(tone(7),16000);await delay(30);
+  assert.equal(g.events.some(e=>e.type==='voice.match'),false);assert.equal(g.hangups.length,0);
+});
+
+test('Una comparación tardía no bloquea cuando se revocó el permiso de voz', async t => {
+  let release,started=false;const gate=new Promise(r=>{release=r});t.after(()=>release());
+  const vp=fakeVoiceprint({best:.95});vp.value.api.search=async()=>{started=true;await gate;return{best_similarity:.95,cases:1}};
+  const f=await fixture(t,{voiceprint:vp.value,probability:.1,alert:false});
+  const owner=await f.connect();await f.connect({consentimiento_huella_voz:false,consentimiento_corte_automatico:false});
+  await f.post({type:'status-update',status:'in-progress',call:{id,assistantId}});
+  await until(()=>f.audio());f.audio().onAudio(tone(7),16000);await until(()=>started);
+  owner.close();await once(owner,'close');
+  await until(async () => (await f.diagnostics()).connectedMonitors === 1);
+  release();await delay(30);
+  assert.equal(f.events.some(e=>e.type==='voice.match'),false);assert.equal(f.hangups.length,0);
 });
 
 test('Si la alerta llega antes que la comparación, se corta como siempre', async t => {

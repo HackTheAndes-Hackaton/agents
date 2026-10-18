@@ -37,6 +37,8 @@ La APK traduce `call.ready_to_answer` en «Ya puedes entrar a la llamada», con 
 
 El corte conserva el contrato existente: `call.hangup_requested` con sesión, llamada, UUID y revisión; luego `call.hangup_result`. Solo `call.ended` con motivo del proveedor confirma el fin de Vapi. No equivale a comprobar que Android desconectó una conferencia manual de Entel.
 
+La conferencia automática de la APK 0.4.7 anuncia `voice_block_protocol: 1` al obtener el ticket. Las pantallas de observación manual y las versiones anteriores no anuncian ese control y reciben solo el aviso vocal, sin la nueva orden de bloqueo. Desde la APK 0.4.7 se admite además `reason: voice_match` con `block_number: true`. La orden usa la revisión actual (puede ser 0 antes de la primera transcripción), requiere sesión y UUID válidos y se consume una sola vez. La APK toma el número original de Telecom y lo añade a su lista local antes de cerrar ambas patas; ignora números enviados en el evento y rechaza como destino el del agente. Una coincidencia de voz tiene aviso prioritario incluso si el contenido está en `observar`; no modifica su porcentaje ni confirma identidad. `voice.collecting: matched_existing` indica que se reutiliza una referencia y no se continúa la recopilación.
+
 `GET /v1/phone/diagnostics`, con `X-Voice-Token`, añade `currentCall` y `lastCall`: revisión, estado, alerta, duración de cada inferencia y estado de la solicitud de corte. El último resumen solo vive en memoria y deja de exponerse pasados diez minutos; desaparece al reiniciar. No contiene transcripción, audio, teléfono, nombre ni URL privada de control. Permite correlacionar el ID con Vapi sin conservar el contenido de la conversación.
 
 ## Demora y saludo

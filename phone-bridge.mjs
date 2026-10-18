@@ -227,24 +227,34 @@ export function createPhoneBridge(config) {
       const result = await vp.api.search({ embedding, model_id: vp.engine.model.id, model_version: vp.engine.model.version,
         min_similarity: vp.cfg.notifySimilarity, simulated: vp.cfg.simulated });
       embedding.fill(0);
-      if (target !== call || target.closed) return;
+      if (target !== call || target.closed || !target.voiceConsent) return;
       const similarity = Number(result.best_similarity);
-      if (!Number.isFinite(similarity) || similarity < vp.cfg.notifySimilarity) { target.voiceprintStatus = 'no_match'; return; }
+      const cases = Number.isInteger(result.cases) && result.cases > 0 ? result.cases : 0;
+      if (!Number.isFinite(similarity) || similarity > 1 || similarity < vp.cfg.notifySimilarity || !cases) { target.voiceprintStatus = 'no_match'; return; }
       const strong = similarity >= vp.cfg.strongSimilarity;
       target.voiceMatch = { similarity, strong };
       target.voiceprintStatus = strong ? 'strong_match' : 'match';
       emit({ type: 'voice.match', similarity: Math.round(similarity * 100) / 100, strong,
-        cases: Number.isInteger(result.cases) ? result.cases : 0, reviewed_cases: Number.isInteger(result.reviewed_cases) ? result.reviewed_cases : 0,
+        cases, reviewed_cases: Number.isInteger(result.reviewed_cases) ? result.reviewed_cases : 0,
         last_seen_at: typeof result.last_seen_at === 'string' ? result.last_seen_at : null,
         scam_type: typeof result.scam_type === 'string' ? result.scam_type : null,
         impersonating: typeof result.impersonating === 'string' ? result.impersonating : null,
         identity_verified: false });
+      // Bloqueo preventivo autorizado: reutiliza la referencia existente, sin
+      // convertir una coincidencia en delito ni crear otra huella como confirmación.
+      if (strong && target.autoHangup && [...watchers].some(ws => ws.autoHangup && ws.voiceBlockProtocol)) {
+        if (target.collecting) {
+          target.collecting = false; clearTimeout(target.collectTimer);
+          emit({ type: 'voice.collecting', status: 'matched_existing', identity_verified: false });
+        }
+        void stopForRisk(target, target.revision, 'voice_match');
+      }
     } catch { if (target === call && !target.closed) target.voiceprintStatus = 'search_failed'; }
     finally { snap.pcm.fill(0); }
   }
   // Estafa casi segura: el agente alarga la conversación para juntar voz antes de cortar.
   function beginCollection(target, revision) {
-    if (!vp || !target.voiceConsent || !target.autoHangup || target.voiceEnrolled || target.closed) return false;
+    if (!vp || !target.voiceConsent || !target.autoHangup || target.voiceEnrolled || target.closed || target.hangupRequested) return false;
     if (target.collecting) return true;
     const probability = target.detectResult?.value?.probabilidad;
     if (!(probability >= vp.cfg.confirmProbability || target.voiceMatch?.strong)) return false;
@@ -310,12 +320,14 @@ export function createPhoneBridge(config) {
     });
   }
   async function stopForRisk(target, revision, reason = 'risk_detected') {
-    if (target.hangupRequested || !target.autoHangup) return;
+    if (target.hangupRequested || !target.autoHangup || ![...watchers].some(ws => ws.autoHangup)) return;
+    if (reason === 'voice_match' && ![...watchers].some(ws => ws.autoHangup && ws.voiceBlockProtocol)) return;
     target.hangupRequested = true;
     target.hangupRevision = revision;
     target.hangupReason = reason;
     const requestId = randomUUID();
-    emit({ type: 'call.hangup_requested', request_id: requestId, call_id: target.id, revision, reason });
+    emit({ type: 'call.hangup_requested', request_id: requestId, call_id: target.id, revision, reason,
+      ...(reason === 'voice_match' ? { block_number: true, identity_verified: false } : {}) });
     // La APK puede cerrar el monitor al desconectar Telecom. La orden ya autorizada sigue en curso.
     try {
       const status = await (config.endCall ?? endVapiCall)(target, { apiKey: config.apiKey, assistantId: config.assistantId });
@@ -519,7 +531,8 @@ export function createPhoneBridge(config) {
           const ticket = randomBytes(24).toString('base64url'), expiry = Date.now() + 60000;
           const callerNumber = typeof input.numero_llamante === 'string' && /^\+?\d{6,15}$/.test(input.numero_llamante) ? input.numero_llamante : null;
           tickets.set(ticket, { expiry, autoHangup, evidenceConsent: autoHangup && input.consentimiento_conservacion === true,
-            voiceConsent: input.consentimiento_huella_voz === true, callerNumber }); respond(201, { ticket, expires_at: new Date(expiry).toISOString() });
+            voiceConsent: input.consentimiento_huella_voz === true, voiceBlockProtocol: input.voice_block_protocol === 1,
+            callerNumber }); respond(201, { ticket, expires_at: new Date(expiry).toISOString() });
         } catch { respond(400, { error: 'Solicitud inválida' }); }
         return true;
       }
@@ -547,6 +560,7 @@ export function createPhoneBridge(config) {
       }
       wss.handleUpgrade(req, socket, head, ws => {
         ws.autoHangup = authorization.autoHangup;
+        ws.voiceBlockProtocol = authorization.voiceBlockProtocol === true;
         ws.evidenceConsent = authorization.evidenceConsent;
         ws.voiceConsent = authorization.voiceConsent === true;
         ws.callerNumber = authorization.callerNumber ?? null;
