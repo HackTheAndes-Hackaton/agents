@@ -48,7 +48,7 @@ export function createPhoneBridge(config) {
     hangup_requested: target.hangupRequested === true, hangup_revision: target.hangupRevision ?? null,
     hangup_status: target.hangupStatus ?? null });
   const send = (ws, event) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(event)); };
-  const emit = event => { if (!call) return; const e = { ...event, session_id: call.id }; if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.hangup_requested', 'call.hangup_result'].includes(e.type)) call.cache.set(e.type === 'transcript.update' ? `${e.type}:${e.id}` : e.type, e); for (const ws of watchers) send(ws, e); };
+  const emit = event => { if (!call) return; const e = { ...event, session_id: call.id }; if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.ready_to_answer', 'call.hangup_requested', 'call.hangup_result'].includes(e.type)) call.cache.set(e.type === 'transcript.update' ? `${e.type}:${e.id}` : e.type, e); for (const ws of watchers) send(ws, e); };
   function caption(speaker, at, text) {
     const id = `phone-${speaker}-${at}`;
     if (call.captions.has(id) || (speaker === 'agent' && [...call.captions.values()].filter(line => line.speaker === 'agent').length >= 200)) return;
@@ -178,7 +178,7 @@ export function createPhoneBridge(config) {
     }
     if (text.length > 12000) { emit({ type: 'error', message: 'Límite de análisis alcanzado.' }); finish('text_limit'); return; }
     if (!text.trim() || text === call.text) return;
-    call.source = source; call.text = text; call.revision++;
+    call.source = source; call.text = text; call.revision++; call.cache.delete('call.ready_to_answer');
     if (transcript) caption('caller', event.timestamp, event.transcript);
     else emit({ type: 'transcript.update', id: 'phone-caller', speaker: 'caller', text, sequence: 0, final: false, revision: call.revision, source });
     if (!call.timer) call.timer = setTimeout(() => { const target = call; if (!target) return; target.timer = null; void analyze(target, 'detect'); void analyze(target, 'understand'); }, config.analysisMs ?? 250).unref();
@@ -233,7 +233,7 @@ export function createPhoneBridge(config) {
       wss.handleUpgrade(req, socket, head, ws => {
         ws.autoHangup = authorization.autoHangup;
         watchers.add(ws); send(ws, { type: 'phone.ready', number: config.number ?? null });
-        if (call) { send(ws, { type: 'phone.call', call_id: call.id }); for (const e of call.cache.values()) if (e.type !== 'assessment.update' || e.revision === call.revision) send(ws, e); }
+        if (call) { send(ws, { type: 'phone.call', call_id: call.id }); for (const e of call.cache.values()) if (!['assessment.update', 'call.ready_to_answer'].includes(e.type) || e.revision === call.revision) send(ws, e); }
         ws.on('error', () => ws.close());
         ws.on('close', () => { watchers.delete(ws); if (!watchers.size) finish('monitor_stopped'); });
       });

@@ -21,11 +21,17 @@ Todos incluyen `session_id` y `revision`. Los de este ejemplo son ficticios:
 - `assessment.orientacion` llega a `currentAssessment.guidance` para la recomendación visible.
 - `assessment.motivo` se repite en `risk.update.reasons[0]`, que ya llega a `CallAnalysis.reasons` y puede usar el aviso actual.
 - El porcentaje viene del detector, sin inflarlo por palabras clave. No se deduce el estado a partir de ese porcentaje ni se verifica identidad.
+- `call.ready_to_answer` se emite solo cuando detección y comprensión terminan en la misma revisión con `observar` y `alerta:false`. Significa que el titular puede incorporarse tras la revisión inicial; `identity_verified:false` confirma que no se autenticó a quien llama. No se envía para estados `verificar`, `alertar`, `inconcluso` ni ante fallos.
+
+```json
+{"type":"call.ready_to_answer","session_id":"call-id","revision":7,"identity_verified":false}
+```
+
 - Las citas son texto recibido, no instrucciones a ejecutar. El motivo breve lo redacta el servidor usando categorías seleccionadas y verificadas contra el texto, sin copiar nombres ni prosa libre del modelo.
 
-La primera detección se envía inmediatamente al responder el detector. Si es TRUE, se publica `alertar` **antes de solicitar el corte**, aunque comprensión siga pendiente (`explanation_pending: true`, sin citas inventadas). Cuando ambos agentes completan la misma revisión, se publica el motivo más concreto. Una orientación negativa no se completa sin comprensión; un fallo nunca se convierte en FALSE ni fabrica 0 %.
+La primera detección se envía inmediatamente al responder el detector. Si es TRUE, se publica `alertar` **antes de solicitar el corte**, aunque comprensión siga pendiente (`explanation_pending: true`, sin citas inventadas). Cuando ambos agentes completan la misma revisión, se publica el motivo más concreto. Una orientación negativa no se completa sin comprensión; un fallo nunca se convierte en FALSE ni fabrica 0 %. Un nuevo turno del llamante invalida la señal anterior hasta que termine la siguiente revisión.
 
-El main revisado de `CallNotifications.noticeFor` todavía decide sus etiquetas principalmente con `alert/isScam/isSafeToAnswer`; el equipo de APK debe tomar `currentAssessment.state` si quiere distinguir los cuatro nombres en su notificación. El backend no emite `safe` ni una identidad verificada para forzar la etiqueta «Llamada segura».
+La APK traduce `call.ready_to_answer` en «Ya puedes entrar a la llamada», con una aclaración de que la identidad sigue sin verificarse. El estado `observar` solo describe el texto disponible y no garantiza que la llamada sea segura.
 
 ## Corte y diagnóstico
 
