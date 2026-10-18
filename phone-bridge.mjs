@@ -173,6 +173,9 @@ export function createPhoneBridge(config) {
     if (config.scribeEnabled && call.comparison) emit({ type: 'comparison.status', status: call.comparison.metadata().status, comparison_only: true });
     if (reason === 'provider_ended' && call.hangupRequested) call.hangupStatus = 'confirmed';
     lastCall = { ...callMetadata(call), end_reason: reason, ended_at: new Date().toISOString() };
+    if(config.caseDelivery?.enabled) void config.caseDelivery.finish({session_id:call.id,simulated:config.caseSimulated===true,
+      channel:'telefono_vapi',started_at:new Date(call.started).toISOString(),ended_at:new Date().toISOString(),
+      time_source:'monitor_first_event',text:call.text,decision:call.detectResult?.revision===call.revision?call.detectResult.value:null});
     emit({ type: 'call.ended', reason });
     ended.set(call.id, Date.now()); clearTimeout(call.expiry); clearTimeout(call.timer); clearTimeout(call.comparisonTimer);
     call.comparisonText = ''; call.pendingAcks.clear();
@@ -258,7 +261,7 @@ export function createPhoneBridge(config) {
     if (!watchers.size) return;
     if (call && call.id !== id) return;
     if (!call) {
-      call = { id, text: '', count: 0, at: -1, revision: 0, detectRevision: 0, understandRevision: 0, cache: new Map(), turns: new Map(), captions: new Map(), pendingAcks: new Map(), delivery: [], source: null, closed: false, autoHangup: [...watchers].some(ws => ws.autoHangup), controlUrl: null,
+      call = { id, started:Date.now(), text: '', count: 0, at: -1, revision: 0, detectRevision: 0, understandRevision: 0, cache: new Map(), turns: new Map(), captions: new Map(), pendingAcks: new Map(), delivery: [], source: null, closed: false, autoHangup: [...watchers].some(ws => ws.autoHangup), controlUrl: null,
         evidenceConsent: config.evidenceEnabled === true && [...watchers].some(ws => ws.evidenceConsent), audio: new PhoneAudioWindow() };
       call.expiry = setTimeout(() => finish('analysis_expired'), config.ttlMs ?? 4 * 60000).unref();
       emit({ type: 'phone.call', call_id: id });
@@ -342,7 +345,11 @@ export function createPhoneBridge(config) {
       const ticket = new URL(req.url, 'http://localhost').searchParams.get('ticket');
       const authorization = tickets.get(ticket); tickets.delete(ticket);
       if (!enabled || !authorization || authorization.expiry < Date.now() || watchers.size >= 3 ||
-          (authorization.autoHangup && (call || [...watchers].some(ws => ws.autoHangup)))) { socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'); return true; }
+          (authorization.autoHangup && (call || [...watchers].some(ws => ws.autoHangup)))) {
+        // Un cliente rechazado puede reiniciar TCP antes de recibir el cierre.
+        socket.on('error',()=>socket.destroy());
+        socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'); return true;
+      }
       wss.handleUpgrade(req, socket, head, ws => {
         ws.autoHangup = authorization.autoHangup;
         ws.evidenceConsent = authorization.evidenceConsent;

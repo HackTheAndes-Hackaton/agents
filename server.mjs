@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { detectAlert, parseThreshold } from './decisions.mjs';
 import { createVoiceServer } from './voice.mjs';
 import { groundUnderstanding } from './understanding.mjs';
+import { createReportServer } from './report-server.mjs';
 
 export async function createAgentServer(config = {}) {
   const dataDir = config.dataDir ?? process.env.DATA_DIR ?? '/data';
@@ -13,6 +14,7 @@ export async function createAgentServer(config = {}) {
   const baseUrl = config.baseUrl ?? process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
   const model = config.model ?? process.env.OPENAI_MODEL ?? 'gpt-4.1-mini';
   const role = config.role ?? process.env.AGENT_ROLE ?? 'comprension';
+  if (role === 'reportes') return createReportServer(config);
   if (role === 'voz') return createVoiceServer(config);
   if (!['comprension', 'deteccion'].includes(role)) throw new Error('AGENT_ROLE debe ser comprension o deteccion');
   const instructions = role === 'comprension' ? config.instructions ?? await readFile(new URL('./prompts/comprension.md', import.meta.url), 'utf8') : null;

@@ -8,6 +8,7 @@ import { LiveCaptions, liveSessionConfig, liveAnalysisContext } from './live-voi
 import { assessmentEvents } from './call-policy.mjs';
 import { createPhoneBridge } from './phone-bridge.mjs';
 import { evidenceClient, evidenceApiClient, evidenceRoutes, captureControl } from './evidence.mjs';
+import { createCaseDelivery } from './case-delivery.mjs';
 
 const token = () => randomBytes(24).toString('base64url');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -27,10 +28,12 @@ export async function createVoiceServer(config = {}) {
   const attempts = new Map();
   const files = new Map(await Promise.all(['index.html', 'voice-client.js', 'style.css'].map(async name => [name, await readFile(new URL(`./web/${name}`, import.meta.url))])));
   const ai = { baseUrl, apiKey, timeoutMs: config.timeoutMs ?? 20000 };
+  const caseDelivery = config.caseDelivery ?? createCaseDelivery();
+  const caseSimulated = config.caseSimulated ?? process.env.TISKZ_CASES_SIMULATED === 'true';
   const store=config.evidenceStore ?? config.evidenceMcp ?? (process.env.TISKZ_AUDIO_API_URL ? evidenceApiClient() : evidenceClient());
   const phone = createPhoneBridge({ accessCode, ai: { ...ai, threshold }, secret: config.vapiSecret ?? process.env.VAPI_WEBHOOK_SECRET, assistantId: config.vapiAssistantId ?? process.env.VAPI_ASSISTANT_ID, apiKey: config.vapiApiKey ?? process.env.VAPI_API_KEY, number: process.env.VAPI_PHONE_NUMBER, detect: config.detect, understand: config.understand, analysisMs: config.phoneAnalysisMs,
     evidenceStore: store, evidenceEnabled: config.phoneEvidenceEnabled ?? process.env.VAPI_PHONE_EVIDENCE_ENABLED === 'true', evidenceSimulated: config.phoneEvidenceSimulated ?? process.env.VAPI_PHONE_EVIDENCE_SIMULATED === 'true',
-    scribeEnabled: config.scribeEnabled ?? process.env.VAPI_SCRIBE_SHADOW_ENABLED === 'true' });
+    caseDelivery, caseSimulated, scribeEnabled: config.scribeEnabled ?? process.env.VAPI_SCRIBE_SHADOW_ENABLED === 'true' });
   const emit = (room, event) => {
     const payload = { ...event, session_id: room.id, timestamp: new Date().toISOString() };
     if (event.type === 'transcript.update' && event.id) room.transcripts.set(event.id, payload);
@@ -51,7 +54,11 @@ export async function createVoiceServer(config = {}) {
   }
   async function endRoom(room, reason = 'stopped') {
     if (room.closed) return;
+    const caseText = room.mode === 'assistant' ? room.captions.text('caller') : [...room.turns.values()].filter(turn=>turn.speaker!=='agent').sort((a,b)=>a.sequence-b.sequence).map(turn=>turn.text).join('\n');
     room.closed = true;
+    if (caseDelivery.enabled) void caseDelivery.finish({session_id:room.id,simulated:caseSimulated,channel:'webrtc',
+      started_at:new Date(room.started).toISOString(),ended_at:new Date().toISOString(),text:caseText,
+      decision:room.detectResult?.revision===room.revision?room.detectResult.value:null});
     clearTimeout(room.expiry);
     clearTimeout(room.disconnectTimer);
     clearTimeout(room.analysisTimer);
@@ -114,7 +121,7 @@ export async function createVoiceServer(config = {}) {
     if (room.turns.has(event.id)) return; // Un final es inmutable: evita reenvíos y cobros repetidos.
     emit(room, { type: 'transcript.update', id: event.id, speaker: ['caller', 'user', 'agent'].includes(event.speaker) ? event.speaker : 'caller', text: event.text, sequence: Number.isSafeInteger(event.sequence) && event.sequence >= 0 && event.sequence <= 2147483647 ? event.sequence : undefined, flagged: false, final, source: 'webrtc_client_transcription' });
     if (final) {
-      room.turns.set(event.id, { text: event.text, sequence: Number.isSafeInteger(event.sequence) && event.sequence >= 0 ? event.sequence : room.turns.size });
+      room.turns.set(event.id, { text: event.text, speaker:event.speaker, sequence: Number.isSafeInteger(event.sequence) && event.sequence >= 0 ? event.sequence : room.turns.size });
       room.revision++;
       void analyze(room, 'detect');
       void analyze(room, 'understand');
@@ -276,6 +283,6 @@ export async function createVoiceServer(config = {}) {
       client.on('error', () => client.close());
     });
   });
-  server.closeVoice = async () => { phone.close(); await Promise.all([...rooms.values()].map(room => endRoom(room, 'server_closing'))); wss.close(); };
+  server.closeVoice = async () => { phone.close(); await Promise.all([...rooms.values()].map(room => endRoom(room, 'server_closing'))); await caseDelivery.drain(); wss.close(); };
   return server;
 }
