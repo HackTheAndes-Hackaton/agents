@@ -27,7 +27,8 @@ export async function createVoiceServer(config = {}) {
   const attempts = new Map();
   const files = new Map(await Promise.all(['index.html', 'voice-client.js', 'style.css'].map(async name => [name, await readFile(new URL(`./web/${name}`, import.meta.url))])));
   const ai = { baseUrl, apiKey, timeoutMs: config.timeoutMs ?? 20000 };
-  const phone = createPhoneBridge({ accessCode, ai: { ...ai, threshold }, secret: config.vapiSecret ?? process.env.VAPI_WEBHOOK_SECRET, assistantId: config.vapiAssistantId ?? process.env.VAPI_ASSISTANT_ID, apiKey: config.vapiApiKey ?? process.env.VAPI_API_KEY, number: process.env.VAPI_PHONE_NUMBER, detect: config.detect, understand: config.understand, analysisMs: config.phoneAnalysisMs });
+  const phone = createPhoneBridge({ accessCode, ai: { ...ai, threshold }, secret: config.vapiSecret ?? process.env.VAPI_WEBHOOK_SECRET, assistantId: config.vapiAssistantId ?? process.env.VAPI_ASSISTANT_ID, apiKey: config.vapiApiKey ?? process.env.VAPI_API_KEY, number: process.env.VAPI_PHONE_NUMBER, detect: config.detect, understand: config.understand, analysisMs: config.phoneAnalysisMs,
+    scribeEnabled: config.scribeEnabled ?? process.env.VAPI_SCRIBE_SHADOW_ENABLED === 'true' });
   const emit = (room, event) => {
     const payload = { ...event, session_id: room.id, timestamp: new Date().toISOString() };
     if (event.type === 'transcript.update' && event.id) room.transcripts.set(event.id, payload);

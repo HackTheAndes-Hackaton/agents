@@ -9,6 +9,32 @@ const code = 'test-owner-private-code';
 const assistantId = 'test-assistant';
 const id = '11111111-2222-3333-4444-555555555555';
 const delay = ms => new Promise(r => setTimeout(r, ms));
+
+test('Scribe compara sin reemplazar la alerta principal ni autorizar un corte; confirma recepción APK', async t => {
+  let comparison, closed = 0;
+  const f = await fixture(t, { apiKey: 'fake', scribeEnabled: true,
+    startComparison: options => { comparison = options; return { close: () => closed++, metadata: () => ({ status: 'test' }) }; },
+    detect: async incident => ({ alerta: incident.transcripcion.includes('amenaza'), probabilidad: incident.transcripcion.includes('amenaza') ? .99 : .01 }) });
+  const ws = await f.connect(true);
+  await f.post(conversation('Reunión de prueba.'));
+  await until(() => f.events.some(e => e.type === 'alert.updated'));
+  comparison.onCaption({ id: 'scribe-0', sequence: 0, text: 'amenaza ficticia', final: false });
+  await delay(15); assert.equal(f.events.some(e => e.type === 'comparison.alert'), false);
+  comparison.onCaption({ id: 'scribe-0', sequence: 0, text: 'amenaza ficticia', final: true });
+  await until(() => f.events.some(e => e.type === 'comparison.alert'));
+  const e = f.events.find(e => e.type === 'comparison.alert');
+  assert.equal(e.alerta, true); assert.equal(e.comparison_only, true);
+  assert.equal(f.events.find(e => e.type === 'alert.updated').alerta, false);
+  assert.equal(f.events.some(e => e.type === 'call.hangup_requested'), false);
+  ws.send(JSON.stringify({ type: 'event.received', event_id: e.event_id, session_id: id }));
+  await delay(20);
+  const r = await fetch(f.base + '/v1/phone/diagnostics', { headers: { 'X-Voice-Token': code } });
+  const d = await r.json(); assert.equal(d.currentCall.delivery[0].event_type, 'comparison.alert');
+  await f.post({ type: 'status-update', status: 'ended', call: { id, assistantId } });
+  assert.equal(closed, 1);
+  comparison.onCaption({ id: 'scribe-1', sequence: 1, text: 'Tardío', final: true });
+  assert.equal(f.events.some(e => e.text === 'Tardío'), false);
+});
 async function fixture(t, overrides = {}) {
   const inputs = [], events = [];
   const bridge = createPhoneBridge({ accessCode: code, secret, assistantId, ai: {}, analysisMs: 5,
@@ -52,6 +78,38 @@ test('orientación telefónica espera ambos agentes y entrega citas actuales sin
   assert.match(risk.reasons[0], /petición de dinero/);
   assert.equal(risk.revision, e.revision);
   assert.equal(f.events.some(e => e.type === 'call.hangup_requested'), false);
+});
+
+test('emite call.ready_to_answer solo tras observar y no repite una señal de revisión anterior', async t => {
+  let release;
+  const gate = new Promise(r => { release = r; }); t.after(() => release());
+  const firstText = 'No necesito pagos ni datos personales.';
+  const f = await fixture(t, {
+    detect: async () => ({ alerta: false, probabilidad: .1 }),
+    understand: async incident => {
+      if (incident.transcripcion === firstText) await gate;
+      const tipo = incident.transcripcion.includes('Soy tu familiar') ? 'autoridad_alegada' : 'negacion';
+      return { rol: 'comprension', evidencias: [{ tipo, cita: incident.transcripcion }] };
+    },
+  });
+  await f.connect();
+  await f.post(conversation(firstText, 1));
+  await until(() => f.events.some(e => e.type === 'alert.updated'));
+  assert.equal(f.events.some(e => e.type === 'call.ready_to_answer'), false);
+  release();
+  await until(() => f.events.some(e => e.type === 'call.ready_to_answer'));
+  const ready = f.events.find(e => e.type === 'call.ready_to_answer');
+  assert.equal(ready.session_id, id);
+  assert.equal(ready.revision, 1);
+  assert.equal(ready.identity_verified, false);
+
+  await f.post(conversation('Soy tu familiar.', 2));
+  await until(() => f.events.some(e => e.type === 'assessment.update' && e.revision === 2));
+  const beforeReconnect = f.events.length;
+  await f.connect();
+  await until(() => f.events.slice(beforeReconnect).some(e => e.type === 'phone.call'));
+  await delay(20);
+  assert.equal(f.events.slice(beforeReconnect).some(e => e.type === 'call.ready_to_answer'), false);
 });
 
 test('el turno telefónico final se analiza sin los dos segundos de espera artificial', async t => {

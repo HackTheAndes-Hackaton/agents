@@ -3,6 +3,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { detectAlert } from './decisions.mjs';
 import { understandIncident } from './understanding.mjs';
 import { assessmentEvents } from './call-policy.mjs';
+import { startScribeComparison } from './scribe-sidecar.mjs';
 
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 // El control llega de Vapi autenticado; nunca seguir URLs arbitrarias ni redirecciones.
@@ -46,9 +47,60 @@ export function createPhoneBridge(config) {
     detection_ms: target.detectResult?.revision === target.revision && !target.detectResult.error ? target.detectDurationMs ?? null : null,
     understanding_ms: target.understandResult?.revision === target.revision && !target.understandResult.error ? target.understandDurationMs ?? null : null,
     hangup_requested: target.hangupRequested === true, hangup_revision: target.hangupRevision ?? null,
-    hangup_status: target.hangupStatus ?? null });
+    hangup_status: target.hangupStatus ?? null,
+    comparison: target.comparison?.metadata() ?? null,
+    delivery: target.delivery ?? [] });
   const send = (ws, event) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(event)); };
-  const emit = event => { if (!call) return; const e = { ...event, session_id: call.id }; if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.hangup_requested', 'call.hangup_result'].includes(e.type)) call.cache.set(e.type === 'transcript.update' ? `${e.type}:${e.id}` : e.type, e); for (const ws of watchers) send(ws, e); };
+  const emit = event => {
+    if (!call) return;
+    const e = { ...event, session_id: call.id, server_sent_at_ms: Date.now() };
+    if (['alert.updated', 'comparison.alert'].includes(e.type)) {
+      e.event_id = randomUUID(); call.pendingAcks.set(e.event_id, { type: e.type, sent: performance.now() });
+      while (call.pendingAcks.size > 64) call.pendingAcks.delete(call.pendingAcks.keys().next().value);
+    }
+    if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.ready_to_answer', 'call.hangup_requested', 'call.hangup_result', 'comparison.status', 'comparison.alert', 'transcript.comparison'].includes(e.type)) {
+      const key = ['transcript.update', 'transcript.comparison'].includes(e.type) ? `${e.type}:${e.id}` : e.type;
+      call.cache.set(key, e);
+    }
+    for (const ws of watchers) send(ws, e);
+  };
+  async function analyzeComparison(target) {
+    if (target.comparisonRunning) return;
+    target.comparisonRunning = true;
+    try {
+      while (!target.closed && watchers.size && target.comparisonProcessed < target.comparisonRevision) {
+        const revision = target.comparisonRevision, text = target.comparisonText, received = target.comparisonReceived;
+        target.comparisonProcessed = revision;
+        const started = performance.now();
+        try {
+          const result = await (config.detect ?? detectAlert)({ consentimiento_analisis: true, transcripcion: text }, config.ai);
+          if (target !== call || target.closed || revision !== target.comparisonRevision || !watchers.size) continue;
+          emit({ type: 'comparison.alert', source: 'scribe_v2_realtime', comparison_only: true, revision,
+            alerta: result.alerta, probability: result.probabilidad, analysis_ms: Math.round(performance.now() - started),
+            caption_to_alert_ms: Date.now() - received });
+        } catch {
+          if (target === call && !target.closed) emit({ type: 'comparison.status', status: 'analysis_unavailable', comparison_only: true });
+        }
+      }
+    } finally { target.comparisonRunning = false; }
+  }
+  function compare(target) {
+    if (!config.scribeEnabled || !config.apiKey) return;
+    target.comparisonRevision = 0; target.comparisonProcessed = 0; target.comparisonText = '';
+    target.comparison = (config.startComparison ?? startScribeComparison)({ apiKey: config.apiKey,
+      callId: target.id, assistantId: config.assistantId,
+      onStatus: e => { if (target === call && !target.closed) emit({ type: 'comparison.status', comparison_only: true, ...e }); },
+      onCaption: e => {
+        if (target !== call || target.closed || !watchers.size) return;
+        if (e.sequence >= 100 || target.comparisonText.length + e.text.length > 12000) { target.comparison.close(); emit({ type: 'comparison.status', status: 'text_limit', comparison_only: true }); return; }
+        emit({ ...e, type: 'transcript.comparison', source: 'scribe_v2_realtime', comparison_only: true });
+        if (!e.final) return;
+        target.comparisonText += (target.comparisonText ? '\n' : '') + e.text;
+        target.comparisonRevision++; target.comparisonReceived = Date.now();
+        if (!target.comparisonTimer) target.comparisonTimer = setTimeout(() => { target.comparisonTimer = null; void analyzeComparison(target); }, config.analysisMs ?? 250).unref();
+      } });
+    emit({ type: 'comparison.status', status: 'starting', comparison_only: true });
+  }
   function caption(speaker, at, text) {
     const id = `phone-${speaker}-${at}`;
     if (call.captions.has(id) || (speaker === 'agent' && [...call.captions.values()].filter(line => line.speaker === 'agent').length >= 200)) return;
@@ -80,9 +132,12 @@ export function createPhoneBridge(config) {
   }
   function finish(reason) {
     if (!call) return;
+    call.comparison?.close();
+    if (call.comparison) emit({ type: 'comparison.status', status: call.comparison.metadata().status, comparison_only: true });
     lastCall = { ...callMetadata(call), end_reason: reason, ended_at: new Date().toISOString() };
     emit({ type: 'call.ended', reason });
-    ended.set(call.id, Date.now()); clearTimeout(call.expiry); clearTimeout(call.timer);
+    ended.set(call.id, Date.now()); clearTimeout(call.expiry); clearTimeout(call.timer); clearTimeout(call.comparisonTimer);
+    call.comparisonText = ''; call.pendingAcks.clear();
     call.closed = true; call.text = ''; call.cache.clear(); call.turns.clear(); call.captions.clear(); call = null;
     for (const [id, at] of ended) if (Date.now() - at > 15 * 60000) ended.delete(id);
   }
@@ -103,7 +158,8 @@ export function createPhoneBridge(config) {
           target[`${component}Result`] = { revision, value: result };
           target[`${component}DurationMs`] = Math.round(performance.now() - started);
           if (component === 'detect') {
-            emit({ type: 'alert.updated', alerta: result.alerta, probability: result.probabilidad, revision, provisional: true });
+            emit({ type: 'alert.updated', alerta: result.alerta, probability: result.probabilidad, revision, provisional: true,
+              source: 'vapi_realtime', caption_to_alert_ms: Date.now() - target.captionReceivedAt });
             emit({ type: 'risk.update', risk_percent: Math.round(result.probabilidad * 100), alerta: result.alerta, revision, reasons: ['Estimación provisional; no confirma una estafa.'], scam_type: null, impersonating: null, score_kind: 'probabilidad_de_alerta_no_calibrada' });
           } else emit({ type: 'understanding.update', analysis: result, revision });
         } catch {
@@ -147,10 +203,11 @@ export function createPhoneBridge(config) {
     if (!watchers.size) return;
     if (call && call.id !== id) return;
     if (!call) {
-      call = { id, text: '', count: 0, at: -1, revision: 0, detectRevision: 0, understandRevision: 0, cache: new Map(), turns: new Map(), captions: new Map(), source: null, closed: false, autoHangup: [...watchers].some(ws => ws.autoHangup), controlUrl: null };
+      call = { id, text: '', count: 0, at: -1, revision: 0, detectRevision: 0, understandRevision: 0, cache: new Map(), turns: new Map(), captions: new Map(), pendingAcks: new Map(), delivery: [], source: null, closed: false, autoHangup: [...watchers].some(ws => ws.autoHangup), controlUrl: null };
       call.expiry = setTimeout(() => finish('analysis_expired'), config.ttlMs ?? 4 * 60000).unref();
       emit({ type: 'phone.call', call_id: id });
       emit({ type: 'agent.status', status: 'screening' });
+      compare(call);
     }
     call.controlUrl = vapiControlUrl(event.call.monitor?.controlUrl, id) ?? call.controlUrl;
     if (!transcript && event.type !== 'conversation-update') return;
@@ -178,7 +235,7 @@ export function createPhoneBridge(config) {
     }
     if (text.length > 12000) { emit({ type: 'error', message: 'Límite de análisis alcanzado.' }); finish('text_limit'); return; }
     if (!text.trim() || text === call.text) return;
-    call.source = source; call.text = text; call.revision++;
+    call.source = source; call.text = text; call.revision++; call.captionReceivedAt = Date.now(); call.cache.delete('call.ready_to_answer');
     if (transcript) caption('caller', event.timestamp, event.transcript);
     else emit({ type: 'transcript.update', id: 'phone-caller', speaker: 'caller', text, sequence: 0, final: false, revision: call.revision, source });
     if (!call.timer) call.timer = setTimeout(() => { const target = call; if (!target) return; target.timer = null; void analyze(target, 'detect'); void analyze(target, 'understand'); }, config.analysisMs ?? 250).unref();
@@ -233,7 +290,16 @@ export function createPhoneBridge(config) {
       wss.handleUpgrade(req, socket, head, ws => {
         ws.autoHangup = authorization.autoHangup;
         watchers.add(ws); send(ws, { type: 'phone.ready', number: config.number ?? null });
-        if (call) { send(ws, { type: 'phone.call', call_id: call.id }); for (const e of call.cache.values()) if (e.type !== 'assessment.update' || e.revision === call.revision) send(ws, e); }
+        if (call) { send(ws, { type: 'phone.call', call_id: call.id }); for (const e of call.cache.values()) if (!['assessment.update', 'call.ready_to_answer'].includes(e.type) || e.revision === call.revision) send(ws, e); }
+        ws.on('message', (raw, binary) => {
+          if (binary || raw.length > 512 || !call) return;
+          let e; try { e = JSON.parse(raw); } catch { return; }
+          if (e.type !== 'event.received' || e.session_id !== call.id) return;
+          const pending = call.pendingAcks.get(e.event_id); if (!pending) return;
+          call.pendingAcks.delete(e.event_id);
+          call.delivery.push({ event_type: pending.type, server_round_trip_ms: Math.round(performance.now() - pending.sent) });
+          if (call.delivery.length > 16) call.delivery.shift();
+        });
         ws.on('error', () => ws.close());
         ws.on('close', () => { watchers.delete(ws); if (!watchers.size) finish('monitor_stopped'); });
       });

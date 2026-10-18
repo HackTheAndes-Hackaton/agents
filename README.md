@@ -102,3 +102,7 @@ Ejecuta `npm test` sin créditos o `node scripts/evaluar-fraude.mjs eval/results
 
 El [contrato de avisos locales](docs/CONTRATO_AVISOS_APK.md) define estado, motivo, porcentaje y revisión por WebSocket. La APK construye la notificación Android. No se necesita Firebase para este canal. El backend entrega `alertar` antes del corte aunque comprensión siga pendiente, y después añade motivos basados en las categorías de evidencia. El monitor autorizado debe permanecer conectado durante la llamada; una Activity o notificación por sí sola no lo mantiene.
 
+
+## Comparación de transcripción telefónica
+
+El [canal paralelo de Scribe](docs/SCRIBE_PARALELO.md) compara subtítulos y detección durante la llamada, manteniendo marin y el corte existentes. La APK 0.4.5 lo presenta por separado y confirma la recepción de las alertas.
