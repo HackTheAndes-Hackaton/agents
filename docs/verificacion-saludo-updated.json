@@ -1,0 +1,20 @@
+{
+  "call_id": "01a14d44-9c98-7001-8081-30de1b687e4c",
+  "user_spoke": false,
+  "audible_greeting": true,
+  "voiced_frames": 33,
+  "audible_burst_starts_ms": [
+    833,
+    8858
+  ],
+  "first_audio_after_socket_ms": 833,
+  "first_audio_after_request_ms": 1911,
+  "create_ms": 487,
+  "event_types": [
+    "assistant.started",
+    "conversation-update",
+    "speech-update",
+    "status-update",
+    "transcript"
+  ]
+}

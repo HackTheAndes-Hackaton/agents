@@ -48,7 +48,31 @@ test('orientación telefónica espera ambos agentes y entrega citas actuales sin
   assert.equal(e.revision, 1);
   assert.equal(e.assessment.estado, 'verificar');
   assert.equal(e.assessment.evidencia_textual[0].cita, 'Necesito dinero.');
+  const risk = f.events.filter(e => e.type === 'risk.update').at(-1);
+  assert.match(risk.reasons[0], /petición de dinero/);
+  assert.equal(risk.revision, e.revision);
   assert.equal(f.events.some(e => e.type === 'call.hangup_requested'), false);
+});
+
+test('el turno telefónico final se analiza sin los dos segundos de espera artificial', async t => {
+  const f = await fixture(t, { analysisMs: undefined }); await f.connect();
+  const started = performance.now();
+  await f.post(conversation('Caso ficticio para revisar la entrega del turno.'));
+  await until(() => f.inputs.length === 1);
+  assert.ok(performance.now() - started < 1500, 'No debe añadir 2 segundos antes de llamar al modelo');
+});
+
+test('una comprensión lenta no retrasa el estado alertar ni el corte ya autorizado', async t => {
+  let release;
+  const gate = new Promise(r => { release = r; }); t.after(() => release());
+  const f = await fixture(t, { understand: async () => { await gate; return { rol: 'comprension', evidencias: [] }; }, endCall: async () => 'requested' });
+  await f.connect(true); await f.post(conversation('Amenaza ficticia para esta prueba.'));
+  await until(() => f.events.some(e => e.type === 'call.hangup_result'));
+  const state = f.events.find(e => e.type === 'assessment.update');
+  assert.equal(state.assessment.estado, 'alertar');
+  assert.equal(state.explanation_pending, true);
+  assert.ok(f.events.indexOf(state) < f.events.findIndex(e => e.type === 'call.hangup_requested'));
+  assert.equal(f.events.some(e => e.type === 'understanding.update'), false);
 });
 
 test('rechaza webhooks falsos y no analiza sin pantalla autorizada', async t => {
@@ -211,6 +235,25 @@ test('diagnóstico autenticado no devuelve texto ni URLs privadas', async t => {
  assert.equal(d.received,1);assert.equal(d.lastEvent.assistantMatches,true);
  assert.equal(JSON.stringify(d).includes(text),false);
  assert.equal(JSON.stringify(d).includes(secret),false);
+});
+
+test('diagnóstico conserva solo metadatos de estado y corte para revisar la última llamada', async t => {
+ const text = 'Transfiere dinero o te haré daño.';
+ const f = await fixture(t, { endCall: async () => 'requested', understand: async () => ({ rol: 'comprension', evidencias: [{ tipo: 'amenaza', cita: text }] }) });
+ await f.connect(true); await f.post(conversation(text));
+ await until(() => f.events.some(e => e.type === 'assessment.update') && f.events.some(e => e.type === 'call.hangup_result'));
+ await f.post({ type: 'status-update', status: 'ended', call: { id, assistantId } });
+ const d = await (await fetch(f.base + '/v1/phone/diagnostics', { headers: { 'X-Voice-Token': code } })).json();
+ assert.equal(d.currentCall, null);
+ assert.equal(d.lastCall.call_id, id);
+ assert.equal(d.lastCall.assessment_state, 'alertar');
+ assert.equal(d.lastCall.hangup_requested, true);
+ assert.equal(d.lastCall.hangup_revision, 1);
+ assert.equal(d.lastCall.hangup_status, 'requested');
+ assert.equal(d.lastCall.end_reason, 'provider_ended');
+ assert.equal(d.lastCall.alerta, true);
+ assert.equal(typeof d.lastCall.detection_ms, 'number');
+ assert.doesNotMatch(JSON.stringify(d), /Transfiere|haré daño|controlUrl|cita|transcripcion/);
 });
 
 test('cada turno ocupa su lugar entre ambas voces y se conserva al reconectar', async t => {

@@ -5,7 +5,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { detectAlert, parseThreshold } from './decisions.mjs';
 import { understandIncident } from './understanding.mjs';
 import { LiveCaptions, liveSessionConfig, liveAnalysisContext } from './live-voice.mjs';
-import { currentAssessment } from './call-policy.mjs';
+import { assessmentEvents } from './call-policy.mjs';
 import { createPhoneBridge } from './phone-bridge.mjs';
 import { evidenceClient, evidenceApiClient, evidenceRoutes, captureControl } from './evidence.mjs';
 
@@ -92,8 +92,7 @@ export async function createVoiceServer(config = {}) {
           if (!room.closed && revision === room.revision) emit(room, { type: 'error', message: component === 'detect' ? 'Detección no disponible. No interpretes este fallo como ausencia de riesgo.' : 'Comprensión no disponible; la detección se procesa de forma independiente.', component: component === 'detect' ? 'deteccion' : 'comprension' });
         }
         if (!room.closed && revision === room.revision) {
-          const assessment = currentAssessment(room, transcripcion);
-          if (assessment) emit(room, { type: 'assessment.update', revision, assessment });
+          for (const event of assessmentEvents(room, transcripcion)) emit(room, event);
         }
         if (room.mode === 'assistant' && !room.closed && revision === room.revision && room.detectResult?.revision === revision && room.understandResult?.revision === revision) deliverLiveContext(room);
       }

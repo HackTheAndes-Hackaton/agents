@@ -97,3 +97,7 @@ Con `TISKZ_AUDIO_API_URL=https://web-repo-xi.vercel.app/api/v1/audio-fragments` 
 La [aplicación práctica de los estudios](docs/INVESTIGACION_APLICADA.md) incluye 20 conversaciones sintéticas en español, un evaluador por turno y la política `observar / verificar / alertar / inconcluso`. `assessment.update` reúne resultados de la misma revisión y citas literales. La web muestra la orientación y GPT-Live recibe pautas redactadas por el servidor. La telefonía Vapi emite el evento para sus clientes; dibujarlo en Android requiere integrar ese nuevo tipo de evento.
 
 Ejecuta `npm test` sin créditos o `node scripts/evaluar-fraude.mjs eval/results/nueva-ejecucion.json` con el proveedor configurado para medir los modelos. Los resultados de desarrollo no demuestran precisión en llamadas reales. El canal acústico permanece explícitamente `no_evaluada`; no se deduce voz sintética ni identidad a partir de una transcripción.
+
+## Comunicación con los avisos de la APK
+
+El [contrato de avisos locales](docs/CONTRATO_AVISOS_APK.md) define estado, motivo, porcentaje y revisión por WebSocket. La APK construye la notificación Android. No se necesita Firebase para este canal. El backend entrega `alertar` antes del corte aunque comprensión siga pendiente, y después añade motivos basados en las categorías de evidencia. El monitor autorizado debe permanecer conectado durante la llamada; una Activity o notificación por sí sola no lo mantiene.
