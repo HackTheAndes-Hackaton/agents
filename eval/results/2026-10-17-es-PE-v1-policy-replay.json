@@ -1,0 +1,43 @@
+{
+  "at": "2026-10-18T03:52:59.996Z",
+  "source": "eval/results/2026-10-17-es-PE-v1.json",
+  "source_sha256": "af66a3bc98e51fe2a5b8bb073ec90a2061fedc2c2ef8edf20da0fceaa54dd6f1",
+  "policy_sha256": "b2ab5839220266e062ddc3f01eabf8aba702f419952afd64a96c211aca22eb16",
+  "method": "Reejecución local con las mismas decisiones y citas sintéticas; sin inferencias nuevas. La latencia corresponde a la ejecución original.",
+  "changes": [
+    {
+      "id": "c19",
+      "turn": 2,
+      "before": "verificar",
+      "after": "inconcluso"
+    }
+  ],
+  "summary": {
+    "calls": 20,
+    "expected_predictions": 40,
+    "successful_predictions": 40,
+    "failed_or_missing_predictions": 0,
+    "final_confusion": {
+      "tp": 8,
+      "tn": 10,
+      "fp": 0,
+      "fn": 0,
+      "unanswered": 0,
+      "unlabelled": 2
+    },
+    "final_answer_coverage": 1,
+    "balanced_accuracy_answered_only": 1,
+    "macro_f1_answered_only": 1,
+    "fraud_recall_including_failures": 1,
+    "legitimate_recall_including_failures": 1,
+    "legitimate_calls_with_any_alert": [],
+    "false_alert_call_rate": 0,
+    "premature_alert_calls": [],
+    "missed_actionable_calls": [],
+    "mean_delay_turns_detected_only": 0,
+    "unlabelled_calls_with_alert": [],
+    "brier_answered_final_only": 0.0006388888888888888,
+    "mean_latency_ms": 1007,
+    "limitation": "Corpus sintético de desarrollo; no estima rendimiento real ni calibra el porcentaje. Latencia de inferencia, no de telefonía. Cortes reales no evaluados."
+  }
+}

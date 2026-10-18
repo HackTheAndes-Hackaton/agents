@@ -1,0 +1,1302 @@
+{
+  "at": "2026-10-18T03:51:32.766Z",
+  "corpus": "es-PE-v1",
+  "source_sha256": "4bb4f61490325175429f09c58ec150b2829799ec3eee07b3808b4e7f63aba215",
+  "corpus_sha256": "ec070d71dad8229707de8d95c658684e73af85ea40e0e569d5ed08f70d17d6c5",
+  "files_sha256": {
+    "decisions.mjs": "3e12add8a361a529bacf875dd45c858483702e619b7486686e1a1de13d8c148f",
+    "understanding.mjs": "074a684c89bb0e720f7e39901e454c532f2cb430164a56dc93c05a6a77650a53",
+    "call-policy.mjs": "84ba25af5b5e6fccb57b3d8d84c7651f6ca419d13e185138cc264247e7c44486",
+    "eval/evaluate.mjs": "6886c2a7e66976dc0976cbbf3d783a47343a0734fc27b71c0b6bcb80541a0c0d",
+    "eval/casos-es-PE-v1.json": "ec070d71dad8229707de8d95c658684e73af85ea40e0e569d5ed08f70d17d6c5",
+    "prompts/comprension.md": "ffe6aac6be505eeadd2f977af0728cf93ee1c3295e9664448d788655fdb9a0ff",
+    "prompts/comprension-segmentos.md": "804a3e5bf7e7b6fc367a8a15fd3a3f3dfb5fe359bc02f965822c492a1101e744",
+    "prompts/deteccion.json": "50c95efdd3e5e0cece048befd06b8a19f71502ff0fb8012cb8a0eb681bd69265"
+  },
+  "threshold": 0.5,
+  "understanding_model": "gpt-4.1-mini",
+  "decision_model": "gpt-6-luna",
+  "execution": "Código candidato aislado en /tmp de Maritime. Sin llamadas ni cambio del servidor en producción.",
+  "rows": [
+    {
+      "id": "c01",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.19,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "autoridad_alegada",
+            "cita": "Le llamo del banco por un cargo que aparece en su cuenta."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1391
+    },
+    {
+      "id": "c01",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "autoridad_alegada",
+            "cita": "Le llamo del banco por un cargo que aparece en su cuenta."
+          },
+          {
+            "tipo": "negacion",
+            "cita": "No me dé claves ni códigos."
+          },
+          {
+            "tipo": "verificacion_independiente",
+            "cita": "Cuelgue y revise la aplicación oficial o llame al número que ya tiene en su tarjeta."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 990
+    },
+    {
+      "id": "c02",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.19,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "autoridad_alegada",
+            "cita": "Le llamo del banco por un cargo que aparece en su cuenta."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1334
+    },
+    {
+      "id": "c02",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "autoridad_alegada",
+            "cita": "Le llamo del banco por un cargo que aparece en su cuenta."
+          },
+          {
+            "tipo": "peticion_credenciales",
+            "cita": "Para bloquear ese cargo necesito que me lea la contraseña y el código de autenticación que acaba de recibir por SMS."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 969
+    },
+    {
+      "id": "c03",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Tengo una emergencia con mi mascota y necesito dinero."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1344
+    },
+    {
+      "id": "c03",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Tengo una emergencia con mi mascota y necesito dinero."
+          },
+          {
+            "tipo": "verificacion_independiente",
+            "cita": "Puedes llamarme al número que ya conoces y verificar con la veterinaria."
+          },
+          {
+            "tipo": "verificacion_independiente",
+            "cita": "Espero mientras compruebas antes de decidir."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 957
+    },
+    {
+      "id": "c04",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Tengo una emergencia con mi mascota y necesito dinero."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1251
+    },
+    {
+      "id": "c04",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Tengo una emergencia con mi mascota y necesito dinero."
+          },
+          {
+            "tipo": "peticion_pago",
+            "cita": "Yapéame ahora mismo."
+          },
+          {
+            "tipo": "presion",
+            "cita": "No le cuentes a nadie y no llames al número que conoces para verificar, hazlo ya."
+          },
+          {
+            "tipo": "aislamiento",
+            "cita": "No le cuentes a nadie y no llames al número que conoces para verificar, hazlo ya."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 989
+    },
+    {
+      "id": "c05",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Le contacto por una devolución relacionada con su compra."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1317
+    },
+    {
+      "id": "c05",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.03,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Le contacto por una devolución relacionada con su compra."
+          },
+          {
+            "tipo": "solicitud",
+            "cita": "Compruebe la devolución entrando por su cuenta en la tienda oficial."
+          },
+          {
+            "tipo": "negacion",
+            "cita": "No haga ningún depósito ni comparta códigos."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 925
+    },
+    {
+      "id": "c06",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Le contacto por una devolución relacionada con su compra."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 951
+    },
+    {
+      "id": "c06",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 0.99,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Transfiera ahora el adelanto a esta cuenta para recuperar su dinero."
+          },
+          {
+            "tipo": "aislamiento",
+            "cita": "No hable con la tienda ni verifique con nadie."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 883
+    },
+    {
+      "id": "c07",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.09,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Le llamo por una notificación relacionada con sus tributos."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 895
+    },
+    {
+      "id": "c07",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Le llamo por una notificación relacionada con sus tributos."
+          },
+          {
+            "tipo": "solicitud",
+            "cita": "Consulte por su cuenta el buzón oficial de SUNAT."
+          },
+          {
+            "tipo": "negacion",
+            "cita": "No recibimos pagos ni claves por esta llamada."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 968
+    },
+    {
+      "id": "c08",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.09,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Le llamo por una notificación relacionada con sus tributos."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 909
+    },
+    {
+      "id": "c08",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Le llamo por una notificación relacionada con sus tributos."
+          },
+          {
+            "tipo": "amenaza",
+            "cita": "Si no transfiere quinientos soles a mi cuenta ahora, voy a hacerle daño a su familia."
+          },
+          {
+            "tipo": "peticion_pago",
+            "cita": "Si no transfiere quinientos soles a mi cuenta ahora, voy a hacerle daño a su familia."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 960
+    },
+    {
+      "id": "c09",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Estoy llamando por el problema de soporte de su equipo."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 885
+    },
+    {
+      "id": "c09",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Estoy llamando por el problema de soporte de su equipo."
+          },
+          {
+            "tipo": "contexto",
+            "cita": "Puede consultar el ticket en el sitio que usted ya conoce."
+          },
+          {
+            "tipo": "negacion",
+            "cita": "No instale nada ni me dé control remoto desde esta llamada."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 966
+    },
+    {
+      "id": "c10",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Estoy llamando por el problema de soporte de su equipo."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 911
+    },
+    {
+      "id": "c10",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "acceso_remoto",
+            "cita": "Instale la aplicación de control remoto y abra su banco."
+          },
+          {
+            "tipo": "peticion_pago",
+            "cita": "Transfiera ahora lo que le indique y no consulte con nadie."
+          },
+          {
+            "tipo": "presion",
+            "cita": "Transfiera ahora lo que le indique y no consulte con nadie."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 980
+    },
+    {
+      "id": "c11",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Le llamo para coordinar la entrega de un paquete."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 970
+    },
+    {
+      "id": "c11",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud",
+            "cita": "Le llamo para coordinar la entrega de un paquete."
+          },
+          {
+            "tipo": "solicitud",
+            "cita": "Solo quería confirmar si puede recibirlo mañana por la tarde."
+          },
+          {
+            "tipo": "negacion",
+            "cita": "No necesito pagos ni datos bancarios."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 954
+    },
+    {
+      "id": "c12",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud",
+            "cita": "Le llamo para coordinar la entrega de un paquete."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 947
+    },
+    {
+      "id": "c12",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "autoridad_alegada",
+            "cita": "Soy del banco que valida el envío."
+          },
+          {
+            "tipo": "peticion_credenciales",
+            "cita": "Dígame la contraseña de su banca y el código de autenticación para desbloquearlo."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 896
+    },
+    {
+      "id": "c13",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Le llamo por una deuda pendiente de pago."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 992
+    },
+    {
+      "id": "c13",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud",
+            "cita": "Le llamo por una deuda pendiente de pago."
+          },
+          {
+            "tipo": "verificacion_independiente",
+            "cita": "Revise primero su contrato y consulte con la empresa usando el contacto que ya conoce."
+          },
+          {
+            "tipo": "verificacion_independiente",
+            "cita": "Puede verificar antes de pagar."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 986
+    },
+    {
+      "id": "c14",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Le llamo por una deuda pendiente de pago."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 914
+    },
+    {
+      "id": "c14",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Le llamo por una deuda pendiente de pago."
+          },
+          {
+            "tipo": "amenaza",
+            "cita": "Deposite ahora o voy a lastimar a su familia."
+          },
+          {
+            "tipo": "amenaza",
+            "cita": "No corte ni pida ayuda."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 891
+    },
+    {
+      "id": "c15",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Te hablo por el dinero del almuerzo que coordinamos."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 946
+    },
+    {
+      "id": "c15",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud",
+            "cita": "Te hablo por el dinero del almuerzo que coordinamos."
+          },
+          {
+            "tipo": "peticion_pago",
+            "cita": "Son veinte soles, sin apuro."
+          },
+          {
+            "tipo": "verificacion_independiente",
+            "cita": "Verifica conmigo por el contacto habitual antes de hacer el Yape."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1054
+    },
+    {
+      "id": "c16",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud",
+            "cita": "Te hablo por el dinero del almuerzo que coordinamos."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1108
+    },
+    {
+      "id": "c16",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 0.99,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Te hablo por el dinero del almuerzo que coordinamos."
+          },
+          {
+            "tipo": "peticion_pago",
+            "cita": "Haz el Yape a esta cuenta ahora."
+          },
+          {
+            "tipo": "aislamiento",
+            "cita": "No me llames a mi otro número para verificar ni le digas a nadie."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 963
+    },
+    {
+      "id": "c17",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Hoy vi una noticia sobre extorsiones."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1202
+    },
+    {
+      "id": "c17",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "amenaza",
+            "cita": "La noticia cita esta amenaza: deposita ahora o lastimamos a tu familia."
+          },
+          {
+            "tipo": "negacion",
+            "cita": "Es un ejemplo de lo que hay que reportar, no te estoy pidiendo dinero."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 817
+    },
+    {
+      "id": "c18",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "Soy una voz automatizada que recuerda citas."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1081
+    },
+    {
+      "id": "c18",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "negacion",
+            "cita": "No necesito pagos ni datos."
+          },
+          {
+            "tipo": "verificacion_independiente",
+            "cita": "Verifíquelo en el canal habitual de su centro."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 858
+    },
+    {
+      "id": "c19",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "No se escucha bien."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1065
+    },
+    {
+      "id": "c19",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "presion",
+            "cita": "Necesito que gane el [inaudible] en comisiones, tengo que conseguir ahorita."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 900
+    },
+    {
+      "id": "c20",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud",
+            "cita": "Hola, necesito hablar contigo."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1109
+    },
+    {
+      "id": "c20",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud",
+            "cita": "Hola, necesito hablar contigo."
+          },
+          {
+            "tipo": "peticion_pago",
+            "cita": "Necesito dinero."
+          }
+        ],
+        "explicacion_disponible": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 852
+    }
+  ],
+  "summary": {
+    "calls": 20,
+    "expected_predictions": 40,
+    "successful_predictions": 40,
+    "failed_or_missing_predictions": 0,
+    "final_confusion": {
+      "tp": 8,
+      "tn": 10,
+      "fp": 0,
+      "fn": 0,
+      "unanswered": 0,
+      "unlabelled": 2
+    },
+    "final_answer_coverage": 1,
+    "balanced_accuracy_answered_only": 1,
+    "macro_f1_answered_only": 1,
+    "fraud_recall_including_failures": 1,
+    "legitimate_recall_including_failures": 1,
+    "legitimate_calls_with_any_alert": [],
+    "false_alert_call_rate": 0,
+    "premature_alert_calls": [],
+    "missed_actionable_calls": [],
+    "mean_delay_turns_detected_only": 0,
+    "unlabelled_calls_with_alert": [],
+    "brier_answered_final_only": 0.0006388888888888888,
+    "mean_latency_ms": 1007,
+    "limitation": "Corpus sintético de desarrollo; no estima rendimiento real ni calibra el porcentaje. Latencia de inferencia, no de telefonía. Cortes reales no evaluados."
+  }
+}

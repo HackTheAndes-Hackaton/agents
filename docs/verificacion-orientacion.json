@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-18T03:56:15.282Z",
+  "agent": "andes-voz",
+  "code_commit": "f2871bb",
+  "runtime_sha256": "5f74cd870967ada408cfec0575784d42519e3394fdb1b24a7e04ed6a5b318225",
+  "status": "active",
+  "health_http": 200,
+  "chat_http": 200,
+  "test_kind": "Texto sintético enviado al WebSocket público; no valida audio, telefonía ni APK.",
+  "results": [
+    {
+      "revision": 1,
+      "estado": "verificar",
+      "alerta": false,
+      "voz_sintetica": "no_evaluada",
+      "expected": "verificar",
+      "passed": true
+    },
+    {
+      "revision": 1,
+      "estado": "inconcluso",
+      "alerta": false,
+      "voz_sintetica": "no_evaluada",
+      "expected": "inconcluso",
+      "passed": true
+    }
+  ]
+}

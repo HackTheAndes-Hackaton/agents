@@ -2,6 +2,7 @@ import { timingSafeEqual, randomBytes, randomUUID } from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import { detectAlert } from './decisions.mjs';
 import { understandIncident } from './understanding.mjs';
+import { currentAssessment } from './call-policy.mjs';
 
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 // El control llega de Vapi autenticado; nunca seguir URLs arbitrarias ni redirecciones.
@@ -40,7 +41,7 @@ export function createPhoneBridge(config) {
   let call = null;
   const diagnostics = { received: 0, callerFinals: 0, lastEvent: null };
   const send = (ws, event) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(event)); };
-  const emit = event => { if (!call) return; const e = { ...event, session_id: call.id }; if (['risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.hangup_requested', 'call.hangup_result'].includes(e.type)) call.cache.set(e.type === 'transcript.update' ? `${e.type}:${e.id}` : e.type, e); for (const ws of watchers) send(ws, e); };
+  const emit = event => { if (!call) return; const e = { ...event, session_id: call.id }; if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.hangup_requested', 'call.hangup_result'].includes(e.type)) call.cache.set(e.type === 'transcript.update' ? `${e.type}:${e.id}` : e.type, e); for (const ws of watchers) send(ws, e); };
   function caption(speaker, at, text) {
     const id = `phone-${speaker}-${at}`;
     if (call.captions.has(id) || (speaker === 'agent' && [...call.captions.values()].filter(line => line.speaker === 'agent').length >= 200)) return;
@@ -87,13 +88,19 @@ export function createPhoneBridge(config) {
             ? await (config.detect ?? detectAlert)(incident, config.ai)
             : await (config.understand ?? understandIncident)(incident, { ...config.ai, selectSegments: true });
           if (target.closed || target !== call || revision !== target.revision || !watchers.size) continue;
+          target[`${component}Result`] = { revision, value: result };
           if (component === 'detect') {
             emit({ type: 'alert.updated', alerta: result.alerta, probability: result.probabilidad, revision, provisional: true });
             emit({ type: 'risk.update', risk_percent: Math.round(result.probabilidad * 100), alerta: result.alerta, revision, reasons: ['Estimación provisional; no confirma una estafa.'], scam_type: null, impersonating: null, score_kind: 'probabilidad_de_alerta_no_calibrada' });
             if (result.alerta === true) void stopForRisk(target, revision);
           } else emit({ type: 'understanding.update', analysis: result, revision });
         } catch {
+          if (target === call && !target.closed && revision === target.revision) target[`${component}Result`] = { revision, error: true };
           if (target === call && !target.closed && revision === target.revision) emit({ type: 'error', component, message: 'Análisis telefónico no disponible. Este fallo no significa ausencia de riesgo.' });
+        }
+        if (target === call && !target.closed && revision === target.revision && watchers.size) {
+          const assessment = currentAssessment(target, text);
+          if (assessment) emit({ type: 'assessment.update', revision, assessment });
         }
       }
     } finally { target[component] = false; }
@@ -209,7 +216,7 @@ export function createPhoneBridge(config) {
       wss.handleUpgrade(req, socket, head, ws => {
         ws.autoHangup = authorization.autoHangup;
         watchers.add(ws); send(ws, { type: 'phone.ready', number: config.number ?? null });
-        if (call) { send(ws, { type: 'phone.call', call_id: call.id }); for (const e of call.cache.values()) send(ws, e); }
+        if (call) { send(ws, { type: 'phone.call', call_id: call.id }); for (const e of call.cache.values()) if (e.type !== 'assessment.update' || e.revision === call.revision) send(ws, e); }
         ws.on('error', () => ws.close());
         ws.on('close', () => { watchers.delete(ws); if (!watchers.size) finish('monitor_stopped'); });
       });
