@@ -45,8 +45,8 @@ async function fixture(t, overrides = {}) {
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   const base = `http://127.0.0.1:${server.address().port}`;
   t.after(async () => { bridge.close(); await new Promise(r => server.close(r)); });
-  async function connect(autoHangup = false) {
-    const response = await fetch(base + '/v1/phone/monitor', { method: 'POST', headers: { 'X-Voice-Token': code, 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimiento_analisis: true, consentimiento_corte_automatico: autoHangup }) });
+  async function connect(autoHangup = false, evidenceConsent = false) {
+    const response = await fetch(base + '/v1/phone/monitor', { method: 'POST', headers: { 'X-Voice-Token': code, 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimiento_analisis: true, consentimiento_corte_automatico: autoHangup, consentimiento_conservacion: evidenceConsent }) });
     const { ticket } = await response.json();
     const ws = new WebSocket(base.replace('http:', 'ws:') + '/ws/calls?channel=phone&ticket=' + ticket);
     ws.on('message', raw => events.push(JSON.parse(raw)));
@@ -344,4 +344,82 @@ test('el porcentaje conserva una probabilidad intermedia sin forzar alerta ni co
   assert.equal(f.events.find(e=>e.type==='risk.update').risk_percent,37);
   assert.equal(f.events.find(e=>e.type==='alert.updated').probability,.37);
   assert.equal(f.events.some(e=>e.type==='call.hangup_requested'),false);
+});
+
+const finalTurn = (text, timestamp) => ({ type: 'transcript', transcriptType: 'final', role: 'user', transcript: text, timestamp, call: { id, assistantId } });
+
+test('cierre hablado del agente ordena cortar ambas patas, nunca por palabras de quien llama', async t => {
+  let cuts = 0;
+  const f = await fixture(t, { detect: async () => ({ alerta: false, probabilidad: .1 }), endCall: async () => { cuts++; return 'requested'; } });
+  await f.connect(true);
+  await f.post(finalTurn('Te voy a cortar.', 1));
+  await f.post({ ...finalTurn('No voy a terminar la llamada.', 2), role: 'assistant' });
+  await delay(20); assert.equal(cuts, 0);
+  await f.post({ ...finalTurn('Voy a terminar la llamada.', 3), role: 'assistant' });
+  await until(() => cuts === 1);
+  const command = f.events.find(e => e.type === 'call.hangup_requested');
+  assert.equal(command.reason, 'agent_ended'); assert.equal(command.call_id, id);
+  await f.post({ ...finalTurn('Te voy a cortar.', 4), role: 'assistant' });
+  assert.equal(cuts, 1);
+});
+
+test('endCall del proveedor también cierra Telecom antes de emitir call.ended, incluso sin turno de usuario', async t => {
+  const f = await fixture(t, { endCall: async () => 'already_ended' }); await f.connect(true);
+  await f.post({ type: 'status-update', status: 'in-progress', call: { id, assistantId } });
+  await f.post({ type: 'status-update', status: 'ended', endedReason: 'assistant-ended-call', call: { id, assistantId } });
+  await until(() => f.events.some(e => e.type === 'call.ended'));
+  const command = f.events.find(e => e.type === 'call.hangup_requested');
+  assert.equal(command.reason, 'agent_ended'); assert.equal(command.revision, 0);
+  assert.ok(f.events.indexOf(command) < f.events.findIndex(e => e.type === 'call.ended'));
+});
+
+test('conserva WAV solo con consentimiento de conservación, confirma almacenamiento y no retrasa el corte', async t => {
+  let audio, release, args, cuts = 0;
+  const gate = new Promise(r => { release = r; }); t.after(() => release());
+  const f = await fixture(t, { apiKey: 'fake', evidenceEnabled: true,
+    startComparison: o => { audio = o; return { close() {}, metadata: () => ({ status: 'test' }) }; },
+    evidenceStore: async (_, value) => { args = value; await gate; return [{ type: 'text', text: JSON.stringify({ id: 'clip_' + 'a'.repeat(48), incident_id: 'aud_test' }) }]; },
+    endCall: async () => { cuts++; return 'requested'; } });
+  await f.connect(true, true);
+  await f.post({ type: 'status-update', status: 'in-progress', call: { id, assistantId } });
+  assert.equal(audio.transcribe, false); audio.onAudio(Buffer.alloc(48000, 1), 24000);
+  await f.post(finalTurn('Amenaza ficticia', 1));
+  await until(() => args && cuts === 1);
+  assert.equal(args.consentimiento_conservacion, true); assert.equal(args.session_id, id);
+  assert.equal(Buffer.from(args.audio_base64, 'base64').readUInt32LE(24), 16000);
+  assert.equal(f.events.some(e => e.type === 'audio.capture_result' && e.status === 'saved'), false);
+  release(); await until(() => f.events.some(e => e.type === 'audio.capture_result' && e.status === 'saved'));
+  assert.equal(f.events.find(e => e.status === 'saved').fragment_id, 'clip_' + 'a'.repeat(48));
+});
+
+test('análisis autorizado no concede conservación y un observador no puede concederla', async t => {
+  let saved = 0, started = 0;
+  const f = await fixture(t, { evidenceEnabled: true, apiKey: 'fake',
+    startComparison: () => { started++; return { close() {}, metadata: () => ({}) }; }, evidenceStore: async () => { saved++; } });
+  await f.connect(false, true);
+  await f.post(finalTurn('Caso ficticio', 1)); await until(() => f.inputs.length === 1);
+  assert.equal(saved, 0); assert.equal(started, 0);
+  assert.equal(f.events.some(e => e.type === 'audio.capture_result'), false);
+});
+
+test('fallo de almacenamiento no confirma evidencia y no impide cortar', async t => {
+  let audio, cuts = 0;
+  const f = await fixture(t, { apiKey: 'fake', evidenceEnabled: true,
+    startComparison: o => { audio = o; return { close() {}, metadata: () => ({}) }; },
+    evidenceStore: async () => { throw Error('storage_down'); }, endCall: async () => { cuts++; return 'requested'; } });
+  await f.connect(true, true); await f.post({ type: 'status-update', status: 'in-progress', call: { id, assistantId } });
+  audio.onAudio(Buffer.alloc(48000, 2), 24000); await f.post(finalTurn('Amenaza ficticia', 1));
+  await until(() => f.events.some(e => e.type === 'audio.capture_result' && e.status === 'failed'));
+  assert.equal(cuts, 1); assert.equal(f.events.some(e => e.status === 'saved'), false);
+});
+
+test('revocar el monitor propietario borra la ventana aunque quede un observador', async t => {
+  let audio, saves = 0;
+  const f = await fixture(t, { apiKey: 'fake', evidenceEnabled: true,
+    startComparison: o => { audio = o; return { close() {}, metadata: () => ({}) }; }, evidenceStore: async () => { saves++; } });
+  const owner = await f.connect(true, true); await f.connect(false);
+  await f.post({ type: 'status-update', status: 'in-progress', call: { id, assistantId } });
+  audio.onAudio(Buffer.alloc(48000, 2), 24000); owner.close(); await once(owner, 'close'); await delay(15);
+  audio.onAudio(Buffer.alloc(48000, 2), 24000); await f.post(finalTurn('Amenaza ficticia', 1));
+  await until(() => f.inputs.length === 1); assert.equal(saves, 0);
 });

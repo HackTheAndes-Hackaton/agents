@@ -4,6 +4,7 @@ import { detectAlert } from './decisions.mjs';
 import { understandIncident } from './understanding.mjs';
 import { assessmentEvents } from './call-policy.mjs';
 import { startScribeComparison } from './scribe-sidecar.mjs';
+import { PhoneAudioWindow } from './phone-evidence.mjs';
 
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 // El control llega de Vapi autenticado; nunca seguir URLs arbitrarias ni redirecciones.
@@ -20,7 +21,7 @@ export async function endVapiCall(target, config = {}) {
   const request = config.fetch ?? fetch;
   if (!url && config.apiKey) {
     const response = await request(`https://api.vapi.ai/call/${encodeURIComponent(target.id)}`, {
-      headers: { Authorization: `Bearer ${config.apiKey}` }, redirect: 'error', signal: AbortSignal.timeout(5000),
+      headers: { Authorization: `Bearer ${config.apiKey}`, 'User-Agent': 'vapi-cli/0.2.1' }, redirect: 'error', signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) throw Error('call_lookup_failed');
     const data = await response.json();
@@ -29,7 +30,7 @@ export async function endVapiCall(target, config = {}) {
     url = vapiControlUrl(data.monitor?.controlUrl, target.id);
   }
   if (!url) throw Error('control_unavailable');
-  const response = await request(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+  const response = await request(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'User-Agent': 'vapi-cli/0.2.1' },
     body: JSON.stringify({ type: 'end-call' }), redirect: 'error', signal: AbortSignal.timeout(5000) });
   if (!response.ok) throw Error('hangup_rejected');
   return 'requested'; // La confirmación definitiva llega con status-update: ended.
@@ -48,6 +49,10 @@ export function createPhoneBridge(config) {
     understanding_ms: target.understandResult?.revision === target.revision && !target.understandResult.error ? target.understandDurationMs ?? null : null,
     hangup_requested: target.hangupRequested === true, hangup_revision: target.hangupRevision ?? null,
     hangup_status: target.hangupStatus ?? null,
+    hangup_reason: target.hangupReason ?? null,
+    evidence_status: target.evidenceStatus ?? null,
+    evidence_fragment_id: target.evidenceFragmentId ?? null,
+    evidence_incident_id: target.evidenceIncidentId ?? null,
     comparison: target.comparison?.metadata() ?? null,
     delivery: target.delivery ?? [] });
   const send = (ws, event) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(event)); };
@@ -58,7 +63,7 @@ export function createPhoneBridge(config) {
       e.event_id = randomUUID(); call.pendingAcks.set(e.event_id, { type: e.type, sent: performance.now() });
       while (call.pendingAcks.size > 64) call.pendingAcks.delete(call.pendingAcks.keys().next().value);
     }
-    if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.ready_to_answer', 'call.hangup_requested', 'call.hangup_result', 'comparison.status', 'comparison.alert', 'transcript.comparison'].includes(e.type)) {
+    if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.ready_to_answer', 'call.hangup_requested', 'call.hangup_result', 'comparison.status', 'comparison.alert', 'transcript.comparison', 'audio.capture_result'].includes(e.type)) {
       const key = ['transcript.update', 'transcript.comparison'].includes(e.type) ? `${e.type}:${e.id}` : e.type;
       call.cache.set(key, e);
     }
@@ -85,11 +90,13 @@ export function createPhoneBridge(config) {
     } finally { target.comparisonRunning = false; }
   }
   function compare(target) {
-    if (!config.scribeEnabled || !config.apiKey) return;
+    if ((!config.scribeEnabled && !target.evidenceConsent) || !config.apiKey) return;
     target.comparisonRevision = 0; target.comparisonProcessed = 0; target.comparisonText = '';
     target.comparison = (config.startComparison ?? startScribeComparison)({ apiKey: config.apiKey,
       callId: target.id, assistantId: config.assistantId,
-      onStatus: e => { if (target === call && !target.closed) emit({ type: 'comparison.status', comparison_only: true, ...e }); },
+      transcribe: config.scribeEnabled === true,
+      onAudio: (bytes, rate) => { if (target === call && !target.closed && target.evidenceConsent) target.audio.push(bytes, rate); },
+      onStatus: e => { if (config.scribeEnabled && target === call && !target.closed) emit({ type: 'comparison.status', comparison_only: true, ...e }); },
       onCaption: e => {
         if (target !== call || target.closed || !watchers.size) return;
         if (e.sequence >= 100 || target.comparisonText.length + e.text.length > 12000) { target.comparison.close(); emit({ type: 'comparison.status', status: 'text_limit', comparison_only: true }); return; }
@@ -99,7 +106,33 @@ export function createPhoneBridge(config) {
         target.comparisonRevision++; target.comparisonReceived = Date.now();
         if (!target.comparisonTimer) target.comparisonTimer = setTimeout(() => { target.comparisonTimer = null; void analyzeComparison(target); }, config.analysisMs ?? 250).unref();
       } });
-    emit({ type: 'comparison.status', status: 'starting', comparison_only: true });
+    if (config.scribeEnabled) emit({ type: 'comparison.status', status: 'starting', comparison_only: true });
+  }
+  function saveEvidence(target, revision) {
+    if (!target.evidenceConsent || target.evidenceStatus || !config.evidenceStore) return;
+    const wav = target.audio.wav();
+    const requestId = randomUUID();
+    const report = (status, extra = {}) => {
+      target.evidenceStatus = status;
+      if (extra.fragment_id) { target.evidenceFragmentId = extra.fragment_id; target.evidenceIncidentId = extra.incident_id; }
+      if (target === call && !target.closed) emit({ type: 'audio.capture_result', request_id: requestId, revision, status, ...extra });
+      else if (lastCall?.call_id === target.id) Object.assign(lastCall, { evidence_status: status,
+        evidence_fragment_id: target.evidenceFragmentId ?? null, evidence_incident_id: target.evidenceIncidentId ?? null });
+    };
+    if (!wav) { report('failed', { reason: 'no_audio' }); return; }
+    report('saving');
+    // La instantánea ya autorizada termina de guardarse aunque el corte cierre el monitor.
+    void (async () => {
+      try {
+        const content = await config.evidenceStore('guardar_fragmento', { session_id: target.id, request_id: requestId,
+          consentimiento_conservacion: true, audio_base64: wav.toString('base64'), source: 'provider_mixed',
+          risk_percent: Math.round(target.detectResult.value.probabilidad * 100), simulated: config.evidenceSimulated === true });
+        const data = JSON.parse(content.find(c => c.type === 'text')?.text ?? 'null');
+        if (!/^clip_[a-f0-9]{48}$/.test(data?.id ?? '')) throw Error('storage_not_confirmed');
+        report('saved', { fragment_id: data.id, incident_id: data.incident_id, speaker: 'unknown', review_status: 'pendiente' });
+      } catch { report('failed', { reason: 'storage_failed' }); }
+      finally { wav.fill(0); }
+    })();
   }
   function caption(speaker, at, text) {
     const id = `phone-${speaker}-${at}`;
@@ -114,17 +147,18 @@ export function createPhoneBridge(config) {
         final: true, revision: call.revision, source: 'vapi_transcript_final' });
     });
   }
-  async function stopForRisk(target, revision) {
+  async function stopForRisk(target, revision, reason = 'risk_detected') {
     if (target.hangupRequested || !target.autoHangup) return;
     target.hangupRequested = true;
     target.hangupRevision = revision;
+    target.hangupReason = reason;
     const requestId = randomUUID();
-    emit({ type: 'call.hangup_requested', request_id: requestId, call_id: target.id, revision, reason: 'risk_detected' });
+    emit({ type: 'call.hangup_requested', request_id: requestId, call_id: target.id, revision, reason });
     // La APK puede cerrar el monitor al desconectar Telecom. La orden ya autorizada sigue en curso.
     try {
       const status = await (config.endCall ?? endVapiCall)(target, { apiKey: config.apiKey, assistantId: config.assistantId });
       target.hangupStatus = status;
-      if (target === call && !target.closed) emit({ type: 'call.hangup_result', request_id: requestId, status, reason: 'risk_detected' });
+      if (target === call && !target.closed) emit({ type: 'call.hangup_result', request_id: requestId, status, reason });
     } catch {
       target.hangupStatus = 'failed';
       if (target === call && !target.closed) emit({ type: 'call.hangup_result', request_id: requestId, status: 'failed', message: 'Vapi no confirmó el corte. Cuelga desde el teléfono.' });
@@ -133,6 +167,7 @@ export function createPhoneBridge(config) {
   function finish(reason) {
     if (!call) return;
     call.comparison?.close();
+    call.audio.clear();
     if (call.comparison) emit({ type: 'comparison.status', status: call.comparison.metadata().status, comparison_only: true });
     lastCall = { ...callMetadata(call), end_reason: reason, ended_at: new Date().toISOString() };
     emit({ type: 'call.ended', reason });
@@ -171,7 +206,7 @@ export function createPhoneBridge(config) {
             if (event.type === 'assessment.update') { target.assessmentState = event.assessment.estado; target.assessmentRevision = revision; }
             emit(event);
           }
-          if (component === 'detect' && target.detectResult?.value?.alerta === true) void stopForRisk(target, revision);
+          if (component === 'detect' && target.detectResult?.value?.alerta === true) { saveEvidence(target, revision); void stopForRisk(target, revision); }
         }
       }
     } finally { target[component] = false; }
@@ -192,18 +227,28 @@ export function createPhoneBridge(config) {
       if (call?.id === id && (event.transcriptType === 'final' || event.type !== 'transcript') &&
           typeof event.transcript === 'string' && event.transcript.length <= 4000 && Number.isFinite(event.timestamp)) {
         caption('agent', event.timestamp, event.transcript);
+        // Respaldo determinista si el modelo pronuncia el cierre sin ejecutar endCall.
+        // Solo una despedida explícita completa del asistente; no frases del llamante ni negaciones.
+        if (/^(?:voy a (?:terminar|colgar) la llamada|te voy a cortar)[.!…\s]*$/iu.test(event.transcript.trim())) void stopForRisk(call, call.revision, 'agent_ended');
       }
       return;
     }
     // Los parciales pueden omitir todavía un «no». Solo analizar turnos completos.
     if (transcript && (event.role !== 'user' || (event.transcriptType !== 'final' && event.type !== 'transcript[transcriptType="final"]') || typeof event.transcript !== 'string' || !event.transcript.trim())) return;
     const complete = event.type === 'end-of-call-report' || (event.type === 'status-update' && event.status === 'ended');
-    if (complete) { if (call?.id === id) finish('provider_ended'); else ended.set(id, Date.now()); return; }
+    if (complete) {
+      if (call?.id === id) {
+        if (['assistant-ended-call', 'assistant-said-end-call-phrase'].includes(event.endedReason ?? event.call.endedReason)) void stopForRisk(call, call.revision, 'agent_ended');
+        finish('provider_ended');
+      } else ended.set(id, Date.now());
+      return;
+    }
     // Desconectar la pantalla revoca el análisis de nuevos fragmentos.
     if (!watchers.size) return;
     if (call && call.id !== id) return;
     if (!call) {
-      call = { id, text: '', count: 0, at: -1, revision: 0, detectRevision: 0, understandRevision: 0, cache: new Map(), turns: new Map(), captions: new Map(), pendingAcks: new Map(), delivery: [], source: null, closed: false, autoHangup: [...watchers].some(ws => ws.autoHangup), controlUrl: null };
+      call = { id, text: '', count: 0, at: -1, revision: 0, detectRevision: 0, understandRevision: 0, cache: new Map(), turns: new Map(), captions: new Map(), pendingAcks: new Map(), delivery: [], source: null, closed: false, autoHangup: [...watchers].some(ws => ws.autoHangup), controlUrl: null,
+        evidenceConsent: config.evidenceEnabled === true && [...watchers].some(ws => ws.evidenceConsent), audio: new PhoneAudioWindow() };
       call.expiry = setTimeout(() => finish('analysis_expired'), config.ttlMs ?? 4 * 60000).unref();
       emit({ type: 'phone.call', call_id: id });
       emit({ type: 'agent.status', status: 'screening' });
@@ -265,7 +310,7 @@ export function createPhoneBridge(config) {
           for (const [ticket, value] of tickets) if (value.expiry < Date.now()) tickets.delete(ticket);
           if (tickets.size >= 6) { respond(429, { error: 'Espera un minuto antes de volver a conectar' }); return true; }
           const ticket = randomBytes(24).toString('base64url'), expiry = Date.now() + 60000;
-          tickets.set(ticket, { expiry, autoHangup }); respond(201, { ticket, expires_at: new Date(expiry).toISOString() });
+          tickets.set(ticket, { expiry, autoHangup, evidenceConsent: autoHangup && input.consentimiento_conservacion === true }); respond(201, { ticket, expires_at: new Date(expiry).toISOString() });
         } catch { respond(400, { error: 'Solicitud inválida' }); }
         return true;
       }
@@ -289,6 +334,7 @@ export function createPhoneBridge(config) {
           (authorization.autoHangup && (call || [...watchers].some(ws => ws.autoHangup)))) { socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'); return true; }
       wss.handleUpgrade(req, socket, head, ws => {
         ws.autoHangup = authorization.autoHangup;
+        ws.evidenceConsent = authorization.evidenceConsent;
         watchers.add(ws); send(ws, { type: 'phone.ready', number: config.number ?? null });
         if (call) { send(ws, { type: 'phone.call', call_id: call.id }); for (const e of call.cache.values()) if (!['assessment.update', 'call.ready_to_answer'].includes(e.type) || e.revision === call.revision) send(ws, e); }
         ws.on('message', (raw, binary) => {
@@ -301,7 +347,11 @@ export function createPhoneBridge(config) {
           if (call.delivery.length > 16) call.delivery.shift();
         });
         ws.on('error', () => ws.close());
-        ws.on('close', () => { watchers.delete(ws); if (!watchers.size) finish('monitor_stopped'); });
+        ws.on('close', () => {
+          watchers.delete(ws);
+          if (ws.evidenceConsent && call) { call.evidenceConsent = false; call.audio.clear(); }
+          if (!watchers.size) finish('monitor_stopped');
+        });
       });
       return true;
     },

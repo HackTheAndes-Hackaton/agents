@@ -72,6 +72,8 @@ export function startScribeComparison(options) {
   function sendAudio(bytes) {
     if (!bytes.length || !alive()) return;
     audioBytes += bytes.length; metadata.caller_audio_ms = Math.round(audioBytes / (rate * 2) * 1000);
+    options.onAudio?.(bytes, rate);
+    if (options.transcribe === false) return;
     if (!opened) {
       queued += bytes.length;
       if (queued > rate * 2 * 8) { fail('startup_audio_overflow'); return; }
@@ -119,7 +121,9 @@ export function startScribeComparison(options) {
       let e; try { e = JSON.parse(raw); } catch { return; }
       if (e.type !== 'start' || started) return;
       if (e.encoding !== 'linear16' || e.container !== 'raw' || e.channels !== 2 || ![8000, 16000, 24000, 48000].includes(e.sampleRate)) { fail('unsupported_audio_format'); return; }
-      started = true; rate = e.sampleRate; void startShadow().catch(() => { if (alive()) fail('transcriber_unavailable'); });
+      started = true; rate = e.sampleRate;
+      if (options.transcribe === false) status('streaming');
+      else void startShadow().catch(() => { if (alive()) fail('transcriber_unavailable'); });
     });
     listen.on('close', () => { if (alive()) fail('listen_disconnected'); });
   })().catch(() => { if (alive()) fail('listen_unavailable'); });
