@@ -6,10 +6,12 @@ import { assessCall } from '../call-policy.mjs';
 import { evaluate, summarize } from '../eval/evaluate.mjs';
 
 const destination = process.argv[2];
-if (!destination) throw Error('Indica un archivo nuevo de salida: node scripts/evaluar-fraude.mjs eval/results/mi-prueba.json');
+if (!destination) throw Error('Indica un archivo nuevo de salida: node scripts/evaluar-fraude.mjs eval/results/mi-prueba.json [eval/contraejemplos-es-PE-v1.json]');
+// Corpus opcional; por defecto, las parejas originales.
+const corpusPath = process.argv[3] ?? new URL('../eval/casos-es-PE-v1.json', import.meta.url);
 try { await access(destination); throw Error('El archivo de salida ya existe. Elige otro para preservar la evaluación.'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
 if (!process.env.OPENAI_API_KEY || !process.env.OPENAI_BASE_URL) throw Error('Configura OPENAI_API_KEY y OPENAI_BASE_URL; esta evaluación consume créditos.');
-const raw = await readFile(new URL('../eval/casos-es-PE-v1.json', import.meta.url));
+const raw = await readFile(corpusPath);
 const corpus = JSON.parse(raw);
 const options = { apiKey: process.env.OPENAI_API_KEY, baseUrl: process.env.OPENAI_BASE_URL, threshold: 0.5, timeoutMs: 20000 };
 const rows = await evaluate(corpus.cases, async transcript => {

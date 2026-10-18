@@ -1,0 +1,326 @@
+{
+  "version": "contraejemplos-es-PE-v1",
+  "origin": "Contraejemplos sintéticos originales: llamadas legítimas que se parecen a una estafa. No son llamadas reales. Etiquetas propuestas sin validación experta. Sirven para medir falsas alertas y como ejemplos negativos; no son un test independiente.",
+  "cases": [
+    {
+      "id": "n01",
+      "scenario": "banco",
+      "parece": "banco",
+      "relacionado_con": "c02",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamo del área de seguridad del banco. Vemos una compra de 890 soles en una tienda en línea.",
+        "Si no la reconoce, bloquee la tarjeta desde la aplicación. Nunca le vamos a pedir claves ni el código que le llega por SMS.",
+        "Si prefiere, cuelgue y llame usted al número que figura detrás de su tarjeta."
+      ],
+      "note": "Avisa de un cargo, pero remite a canales oficiales y rechaza expresamente pedir claves o códigos."
+    },
+    {
+      "id": "n02",
+      "scenario": "banco",
+      "parece": "banco",
+      "relacionado_con": "c02",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le habla su asesora del banco, la de la agencia de Miraflores.",
+        "Le recuerdo que su depósito a plazo vence el viernes. Si quiere renovarlo, venga a la agencia con su DNI o hágalo desde la aplicación.",
+        "No necesito ningún dato por teléfono."
+      ],
+      "note": "Contacto comercial sin urgencia, sin pedido de datos y con trámite por canal oficial."
+    },
+    {
+      "id": "n03",
+      "scenario": "familiar",
+      "parece": "familiar",
+      "relacionado_con": "c04",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Hermano, choqué el carro saliendo del trabajo, estoy bien pero asustado.",
+        "No necesito plata, ya llamé al seguro. Solo quería avisarte para que le cuentes a mamá con calma.",
+        "Si quieres, llámame al número de siempre en un rato."
+      ],
+      "note": "Emergencia familiar real: no pide dinero, no impone secreto y ofrece verificar."
+    },
+    {
+      "id": "n04",
+      "scenario": "familiar",
+      "parece": "familiar",
+      "relacionado_con": "c04",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Prima, ¿me puedes prestar 150 soles? Es para la cuota del colegio de mi hijo.",
+        "Te los devuelvo el quince, cuando me paguen. Si quieres, primero confirma con mi esposo, él sabe.",
+        "No es urgente, puede ser mañana."
+      ],
+      "note": "Pide dinero, pero sin presión, sin secreto y aceptando que se verifique con otra persona."
+    },
+    {
+      "id": "n05",
+      "scenario": "familiar",
+      "parece": "familiar",
+      "relacionado_con": "c04",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "No le digas nada a papá, es una sorpresa.",
+        "Estamos juntando para su torta de cumpleaños, cada hermano pone 40 soles.",
+        "Te mando el Yape por el grupo de la familia y lo confirmas con Rosa si quieres."
+      ],
+      "note": "Hay secreto, pero es una sorpresa familiar; el pago va a un contacto conocido y se puede verificar en el grupo."
+    },
+    {
+      "id": "n06",
+      "scenario": "devolucion",
+      "parece": "devolucion",
+      "relacionado_con": "c06",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamamos de la tienda por la devolución de la licuadora que dejó en la sucursal.",
+        "El reembolso ya se aprobó y llegará a la misma tarjeta en cinco días hábiles. Usted no tiene que pagar nada ni darnos ningún dato."
+      ],
+      "note": "Devolución sin depósito previo ni datos: el dinero vuelve al medio de pago original."
+    },
+    {
+      "id": "n07",
+      "scenario": "tributos",
+      "parece": "tributos",
+      "relacionado_con": "c08",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le escribe la contadora por su declaración anual. Hay una deuda pequeña con SUNAT.",
+        "Son 120 soles. Puede pagarlos con el formulario en la página oficial de SUNAT o en el banco, a nombre de SUNAT, no a mi cuenta.",
+        "Cuando pague, me manda la constancia y lo archivo."
+      ],
+      "note": "Hay una deuda y un monto, pero el pago se hace al ente oficial y no a una cuenta personal."
+    },
+    {
+      "id": "n08",
+      "scenario": "soporte",
+      "parece": "soporte",
+      "relacionado_con": "c10",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Hola, soy Luis de sistemas de la oficina, por el ticket que usted abrió ayer sobre la impresora.",
+        "Le paso por el chat interno el enlace del manual. No necesito su contraseña; si hace falta, voy a su escritorio a las tres."
+      ],
+      "note": "Responde a un pedido previo de la persona, por canal interno, sin control remoto ni contraseñas."
+    },
+    {
+      "id": "n09",
+      "scenario": "entrega",
+      "parece": "entrega",
+      "relacionado_con": "c12",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Buenas, soy el motorizado del delivery, estoy afuera con su pedido.",
+        "Es contra entrega, son 65 soles como dice su orden. Puede pagar en efectivo o con Yape al número de la tienda que sale en la aplicación."
+      ],
+      "note": "Cobro de un pedido que la persona hizo, por el monto de la orden y al número de la tienda."
+    },
+    {
+      "id": "n10",
+      "scenario": "cobranza",
+      "parece": "cobranza",
+      "relacionado_con": "c14",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamamos de la financiera por su cuota atrasada de 300 soles.",
+        "Si no se regulariza, el atraso se reporta a las centrales de riesgo, como dice su contrato.",
+        "Puede pagar en la aplicación o en agencias. Si cree que hay un error, pida el estado de cuenta por la web."
+      ],
+      "note": "Menciona una consecuencia legal del contrato, no violencia; el pago es por canales oficiales y se puede reclamar."
+    },
+    {
+      "id": "n11",
+      "scenario": "yape",
+      "parece": "yape",
+      "relacionado_con": "c16",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Oye, ¿te acuerdas del pollo a la brasa del sábado? Te toca 25 soles.",
+        "Yapéame cuando puedas, al mismo número de siempre. Si no tienes ahora, no hay problema."
+      ],
+      "note": "Deuda chica entre conocidos, al contacto habitual y sin presión."
+    },
+    {
+      "id": "n12",
+      "scenario": "secuestro",
+      "parece": "secuestro_virtual",
+      "relacionado_con": null,
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Ayer me llamaron diciendo que tenían a mi hijo y que depositara tres mil soles o le hacían daño.",
+        "Colgué y lo llamé a su número, estaba en la universidad. Te cuento para que estés atenta si te pasa.",
+        "Ya lo denuncié en la comisaría."
+      ],
+      "note": "Relata una extorsión que ya ocurrió; nadie exige dinero en esta conversación. Es una amenaza citada, no ejercida."
+    },
+    {
+      "id": "n13",
+      "scenario": "secuestro",
+      "parece": "secuestro_virtual",
+      "relacionado_con": null,
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "¡Mamá, ayúdame! Me caí de la bici y me duele mucho el brazo.",
+        "Estoy en la esquina del parque con la señora de la bodega. ¿Puedes venir o llamar a la ambulancia?"
+      ],
+      "note": "Hay angustia y urgencia, pero pide ayuda presencial y no dinero, sin secreto ni aislamiento."
+    },
+    {
+      "id": "n14",
+      "scenario": "autoridad",
+      "parece": "autoridad_falsa",
+      "relacionado_con": null,
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamo de la comisaría por la denuncia de robo de celular que usted presentó.",
+        "Necesitamos que venga a ampliar su declaración con su DNI, de lunes a viernes. El trámite es gratuito y no se paga nada por teléfono."
+      ],
+      "note": "Una autoridad cita a la persona en persona, por un trámite que ella inició, sin pagos."
+    },
+    {
+      "id": "n15",
+      "scenario": "premio",
+      "parece": "premio_falso",
+      "relacionado_con": null,
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "¡Felicidades! Ganó las entradas del concurso de la radio en el que participó esta mañana.",
+        "Puede recogerlas en la emisora con su DNI hasta el viernes. No tiene que pagar nada."
+      ],
+      "note": "Premio de un concurso en el que participó, que se recoge en persona y sin pagos ni datos."
+    },
+    {
+      "id": "n16",
+      "scenario": "inversion",
+      "parece": "inversion",
+      "relacionado_con": null,
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamo del banco por los fondos mutuos que consultó en la web.",
+        "Le aviso que ningún fondo tiene ganancias garantizadas. Si le interesa, le mando la hoja informativa por correo y lo decide con calma en la agencia."
+      ],
+      "note": "Oferta de inversión que advierte del riesgo, no presiona y deriva al canal oficial."
+    },
+    {
+      "id": "n17",
+      "scenario": "codigo",
+      "parece": "banco",
+      "relacionado_con": "c02",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamo de la clínica para confirmar su cita de mañana.",
+        "Le va a llegar un código por SMS: ingréselo usted en nuestra página para confirmar. A mí no me lo diga."
+      ],
+      "note": "Menciona un código, pero indica no dictarlo por teléfono."
+    },
+    {
+      "id": "n18",
+      "scenario": "consejo",
+      "parece": "banco",
+      "relacionado_con": "c02",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Papá, te llamo por lo de las estafas que salieron en la tele.",
+        "Nunca le des tu clave del banco a nadie, ni a mí. Y si te piden un código por teléfono, cuelga y me llamas."
+      ],
+      "note": "Habla de claves y estafas para prevenir; niega cualquier pedido."
+    },
+    {
+      "id": "n19",
+      "scenario": "trabajo",
+      "parece": "datos_sensibles",
+      "relacionado_con": null,
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Hola, te llamo de recursos humanos por tu ingreso del lunes.",
+        "Para el pago de planilla, sube tu número de cuenta en el portal del trabajador con tu usuario. No me lo pases por teléfono ni me des ninguna clave."
+      ],
+      "note": "Necesita un dato para pagarle, pero lo pide por el portal oficial y rechaza recibir claves."
+    },
+    {
+      "id": "n20",
+      "scenario": "hospital",
+      "parece": "familiar",
+      "relacionado_con": "c04",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamamos de emergencias del hospital. Su madre ingresó por una caída y está estable.",
+        "Puede venir con su DNI. Cualquier pago se hace en caja del hospital, nunca por teléfono ni a cuentas de personas."
+      ],
+      "note": "Urgencia médica real: deriva cualquier pago a la caja del hospital y no a terceros."
+    },
+    {
+      "id": "n21",
+      "scenario": "propietario",
+      "parece": "cobranza",
+      "relacionado_con": "c14",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Señora, soy el dueño del departamento. Hay una fuga de agua en el baño de abajo y viene del suyo.",
+        "Voy con el gasfitero a las cuatro. Si no puede estar, deje la llave con el portero. El arreglo lo pago yo."
+      ],
+      "note": "Hay urgencia, pero es doméstica y no pide dinero ni datos."
+    },
+    {
+      "id": "n22",
+      "scenario": "amenaza_ficcion",
+      "parece": "secuestro_virtual",
+      "relacionado_con": null,
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Estoy ensayando para la obra del colegio, escucha mi parte.",
+        "'Tenemos a tu hija, deposita mil soles o no la vuelves a ver.' ¿Suena creíble el villano? La profesora dice que exagero."
+      ],
+      "note": "La amenaza es un texto de ficción citado; no hay pedido real."
+    },
+    {
+      "id": "n23",
+      "scenario": "vecino",
+      "parece": "aislamiento",
+      "relacionado_con": null,
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Vecina, ¿está sola en su casa ahorita?",
+        "Es que se metió un perro al pasaje y quería saber si alguien le puede abrir la reja al dueño. Ya lo encontré, gracias."
+      ],
+      "note": "Pregunta si está sola, pero aclara un motivo cotidiano y no pide nada."
+    },
+    {
+      "id": "n24",
+      "scenario": "operador",
+      "parece": "soporte",
+      "relacionado_con": "c10",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamamos de su operador por la portabilidad que solicitó.",
+        "Su número pasa mañana a medianoche. No tiene que dar ningún código ni pagar; si no la pidió usted, llame al número de atención del operador."
+      ],
+      "note": "Confirma un trámite que pidió la persona, no pide códigos y ofrece verificar si no lo reconoce."
+    }
+  ]
+}
