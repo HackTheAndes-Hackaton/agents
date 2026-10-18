@@ -1,0 +1,107 @@
+{
+  "synthetic": true,
+  "real_calls": false,
+  "independent_benchmark": false,
+  "rows": [
+    {
+      "id": "extorsion",
+      "expected_alert": true,
+      "alert": true,
+      "expected_category": "posible_extorsion",
+      "category": "posible_extorsion",
+      "probability": 1,
+      "types": [
+        "peticion_pago",
+        "amenaza",
+        "condicion",
+        "presion",
+        "aislamiento"
+      ],
+      "elapsed_ms": 1689,
+      "pass": true
+    },
+    {
+      "id": "otp",
+      "expected_alert": true,
+      "alert": true,
+      "expected_category": "posible_fraude_credenciales",
+      "category": "posible_fraude_credenciales",
+      "probability": 1,
+      "types": [
+        "autoridad_alegada",
+        "peticion_credenciales",
+        "presion"
+      ],
+      "elapsed_ms": 999,
+      "pass": true
+    },
+    {
+      "id": "remoto",
+      "expected_alert": true,
+      "alert": true,
+      "expected_category": "posible_fraude_acceso_remoto",
+      "category": "posible_fraude_acceso_remoto",
+      "probability": 0.99,
+      "types": [
+        "autoridad_alegada",
+        "acceso_remoto",
+        "peticion_pago",
+        "aislamiento",
+        "condicion"
+      ],
+      "elapsed_ms": 1126,
+      "pass": false
+    },
+    {
+      "id": "reunion",
+      "expected_alert": false,
+      "alert": false,
+      "expected_category": null,
+      "category": null,
+      "probability": 0,
+      "types": [
+        "presentacion",
+        "solicitud_cotidiana",
+        "negacion"
+      ],
+      "elapsed_ms": 1217,
+      "pass": true
+    },
+    {
+      "id": "denuncia",
+      "expected_alert": false,
+      "alert": false,
+      "expected_category": null,
+      "category": null,
+      "probability": 0,
+      "types": [
+        "relato_amenaza",
+        "solicitud_cotidiana",
+        "negacion"
+      ],
+      "elapsed_ms": 1071,
+      "pass": true
+    },
+    {
+      "id": "prestamo",
+      "expected_alert": false,
+      "alert": false,
+      "expected_category": null,
+      "category": null,
+      "probability": 0.26,
+      "types": [
+        "peticion_pago",
+        "condicion",
+        "verificacion_independiente",
+        "contexto"
+      ],
+      "elapsed_ms": 1208,
+      "pass": true
+    }
+  ],
+  "passed": 5,
+  "total": 6,
+  "primary_type_and_alert_passed": 6,
+  "secondary_annotation_passed": 5,
+  "notes": "Prueba de desarrollo: tipos principales y alerta 6/6; anotaciones secundarias 5/6. En soporte remoto se añadió erróneamente una etiqueta de pago. No demuestra precisión perfecta."
+}

@@ -21,7 +21,7 @@ export async function understandIncident(incident, options) {
   const response = await fetch(`${options.baseUrl.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${options.apiKey}` },
-    body: JSON.stringify({ model: options.model ?? 'gpt-4.1-mini', messages: [{ role: 'system', content: segments ? segmentInstructions : instructions }, { role: 'user', content: JSON.stringify(source) }], max_tokens: 1200, response_format: format }),
+    body: JSON.stringify({ model: options.model ?? 'gpt-4.1-mini', messages: [{ role: 'system', content: segments ? segmentInstructions : instructions }, { role: 'user', content: JSON.stringify(source) }], max_tokens: 1200, temperature: 0, response_format: format }),
     signal: AbortSignal.timeout(options.timeoutMs ?? 20000),
   });
   if (!response.ok) throw new Error(`Comprensión: HTTP ${response.status}`);

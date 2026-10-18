@@ -33,7 +33,7 @@
 
 `assessment.update.assessment.modalidades[]` incluye `categoria`, `etiqueta`, `interpretacion`, `evidencias`, `fuentes` y `criterio`. `risk.update.scam_type` contiene únicamente la primera hipótesis preventiva de la revisión actual; puede ser null. Una alerta puede emitirse antes de tener explicación: el corte no espera una clasificación. Sin citas suficientes se muestra tipo aún sin determinar.
 
-La APK 0.4.9 muestra el tipo en la llamada y su detalle, junto a citas y enlaces de un catálogo fijo. Conserva esos datos en el historial existente. Actualizaciones nuevas retiran tipos anteriores para no arrastrar una acusación. La voz puede aportar `scam_type` de reportes previos: la app lo etiqueta como antecedente, separado del contenido actual, sin convertirlo en identidad o clasificación de la nueva llamada. Si esos reportes no tienen un tipo, no se inventa.
+La APK 0.4.10 muestra el tipo provisional y un motivo breve en la llamada y su detalle. La bibliografía y las citas académicas quedan en esta documentación; no se muestran al usuario ni se recitan durante la llamada. Conserva esos datos en el historial existente. Actualizaciones nuevas retiran tipos anteriores para no arrastrar una acusación. La voz puede aportar `scam_type` de reportes previos: la app lo etiqueta como antecedente, separado del contenido actual, sin convertirlo en identidad o clasificación de la nueva llamada. Si esos reportes no tienen un tipo, no se inventa.
 
 El porcentaje, la decisión de alerta, los permisos de conservación y la política de corte permanecen independientes de la modalidad. Son pruebas de integración y reglas con ejemplos ficticios; no equivalen a entrenar un modelo ni a medir sensibilidad/especificidad en llamadas reales peruanas.
 
@@ -44,3 +44,11 @@ Se observó una omisión concreta: el selector de un solo tipo marcó amenaza, p
 La comprobación de desarrollo con los modelos del servidor, sobre los seis textos ficticios de `eval/modalidades-campus-es-v1.json`, pasó las seis alertas/tipos esperados, además de retirar etiquetas de petición de pago en un relato y en una solicitud de cancelar un cargo. El análisis paralelo de texto tardó 927–1071 ms en esa ejecución; no incluye recepción telefónica, transcripción, respuesta hablada ni entrega a Android. El resultado anterior perdió el tipo de extorsión. Se conservaron ambos resultados en `eval/results/modalidades-campus-2026-10-18.json`. Son casos usados durante el ajuste, no una prueba independiente ni garantía de exactitud.
 
 Validación final: 162 pruebas Node y 81 pruebas Android, compilación y lint. Las categorías no añaden una consulta extra al modelo. La prueba de texto no sustituye una llamada física con la APK actualizada.
+
+
+## Aprendizajes incorporados a las instrucciones
+
+Los agentes de comprensión y detección comparten `prompts/es-PE.md`: seguir peticiones y respuestas entre turnos; conservar juntas la amenaza y la exigencia; distinguir actos actuales de relatos, negaciones y correcciones; tratar familiaridad, imperativos y urgencia como contexto; verificar el objetivo de una petición de OTP o acceso remoto y abstenerse de reconstruir palabras inaudibles. Las instrucciones aplican esas reglas sin autores ni DOI. Las fuentes anteriores explican su fundamento y límites; no son parte del texto que ve la persona durante una llamada.
+
+
+Comprobación al retirar la bibliografía del prompt: se mantuvieron seis de seis tipos principales y decisiones de alerta en los textos ficticios. Cinco de seis casos cumplieron además las restricciones de etiquetas secundarias: en supuesto soporte remoto apareció una etiqueta de pago impropia. Se conserva el resultado en `eval/results/modalidades-aprendizajes-2026-10-18.json`; esta limitación sigue abierta. La extracción usa temperatura 0 para reducir variación de muestreo, sin afirmar que elimine errores. La validación unitaria continúa en 162 pruebas Node y 81 Android.
