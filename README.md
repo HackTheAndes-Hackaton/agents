@@ -75,3 +75,19 @@ Los prompts de cada rol están en `prompts/`. Los ejemplos y las pruebas no demu
 La API de voz ofrece también `mode: "assistant"`: GPT-Live 1 responde en español con voz `marin`, mientras los dos agentes analizan únicamente los subtítulos de quien llama. Requiere consentimiento específico y la app Android actualizada. Véanse el contrato, las limitaciones de telefonía y el cierre de consumo en [canal de voz](docs/canal-voz.md#conversación-con-gpt-live-1-y-marin).
 
 Para recibir alertas de llamadas atendidas por un número de Vapi, consulta [llamadas telefónicas con marin](docs/LLAMADAS_VAPI.md). Ese canal usa saldo de Vapi para voz y créditos de Maritime para los dos análisis. El desvío de la línea Entel debe habilitarlo la operadora; esta integración no lo activa.
+# Evidencia de audio por MCP
+
+La APK puede autorizar por separado `consentimiento_conservacion: true` al crear una sesión WebRTC. Con su ticket productor puede usar `POST /v1/sessions/{id}/evidence` (`request_id` UUID y `audio_base64` WAV), `GET` para listar y `GET /v1/sessions/{id}/evidence/{clip_id}` para reproducir. El ticket observador no puede acceder a estas rutas y al finalizar la sesión todos sus tickets vencen.
+
+Configura en el servidor `TISKZ_MCP_URL`, `TISKZ_API_KEY` y `TISKZ_ORG_ID=org_vecinal`. El MCP se implementa en el repositorio web, sobre Postgres, y debe desplegarse antes de probar el guardado. La clave de la API nunca llega al cliente. El backend fija organización, sesión, procedencia del micrófono y estimación provisional; no acepta nombres, números o puntuaciones inyectados en la carga del cliente.
+
+Las herramientas son `guardar_fragmento`, `listar_fragmentos` y `escuchar_fragmento`. Conservar un WAV no crea una identidad ni un embedding. Esta primera conexión cubre el micrófono WebRTC; las alertas telefónicas de Vapi todavía no aportan audio original. SMS y corte remoto no se ejecutan por estas herramientas.
+
+
+## Orden automática de captura
+
+Las nuevas APK anuncian `audio_capture_protocol: 1` al crear una sesión con conservación autorizada. Una detección TRUE de la revisión actual produce `audio.capture_requested` únicamente en el WebSocket productor: `session_id`, `request_id` UUID, `revision`, `window_ms: 10000` y `expires_at` (30 s). No se dispara con FALSE, errores, análisis obsoleto ni sin autorización. Se confirma una captura automática por sesión; tras fallos puede solicitarse de nuevo en una revisión posterior, hasta tres solicitudes.
+
+La APK responde `audio.capture_received`, toma los últimos segundos disponibles al recibir la orden y sube WAV usando ese `request_id`. No equivale a localizar exactamente la frase que originó el análisis. Si no hay audio o está ocupada responde `audio.capture_failed`. El servidor emite `audio.capture_result` (`saved` y `fragment_id`, o `failed` y motivo) después de consultar el almacenamiento. El cliente no puede confirmar por sí mismo que quedó guardado. Las órdenes vencidas no se ejecutan; un reintento de subida conserva su ID y la puntuación de la detección que lo originó.
+
+Con `TISKZ_AUDIO_API_URL=https://web-repo-xi.vercel.app/api/v1/audio-fragments` el backend usa la API HTTP directamente. Sin esa configuración mantiene compatibilidad con MCP. Ambas entradas comparten el mismo servicio de persistencia en el panel. La clave global nunca se distribuye a la APK. Para estas pruebas `TISKZ_EVIDENCE_SIMULATED=true` separa la evidencia de las llamadas reales.

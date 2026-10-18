@@ -6,6 +6,7 @@ import { detectAlert, parseThreshold } from './decisions.mjs';
 import { understandIncident } from './understanding.mjs';
 import { LiveCaptions, liveSessionConfig, liveAnalysisContext } from './live-voice.mjs';
 import { createPhoneBridge } from './phone-bridge.mjs';
+import { evidenceClient, evidenceApiClient, evidenceRoutes, captureControl } from './evidence.mjs';
 
 const token = () => randomBytes(24).toString('base64url');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -32,6 +33,10 @@ export async function createVoiceServer(config = {}) {
     if (event.type === 'risk.update') room.lastRisk = payload;
     for (const client of room.clients) if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(payload));
   };
+  const emitProducer = (room,event) => {
+    for(const client of room.clients) if(client.isProducer && client.readyState===WebSocket.OPEN) client.send(JSON.stringify({...event,session_id:room.id,timestamp:new Date().toISOString()}));
+  };
+  const capture=captureControl(emitProducer,config.captureTimeoutMs ?? 30000);
   async function hangup(callId, mode) {
     if (!callId) return;
     try {
@@ -45,6 +50,7 @@ export async function createVoiceServer(config = {}) {
     clearTimeout(room.expiry);
     clearTimeout(room.disconnectTimer);
     clearTimeout(room.analysisTimer);
+    capture.close(room);
     room.captions?.clear();
     emit(room, { type: 'call.ended', reason });
     if (!room.providerClosed) await hangup(room.callId, room.mode);
@@ -73,6 +79,7 @@ export async function createVoiceServer(config = {}) {
             emit(room, { type: 'alert.updated', alerta: result.alerta, probability: result.probabilidad, threshold, revision, provisional: true });
             emit(room, { type: 'risk.update', risk_percent: Math.round(result.probabilidad * 100), reasons: ['Estimación provisional de necesidad de alerta; no confirma una estafa.'], scam_type: null, impersonating: null, score_kind: 'probabilidad_de_alerta_no_calibrada', alerta: result.alerta, revision });
             emit(room, { type: 'agent.status', status: result.alerta ? 'suspicious' : 'screening' });
+            capture.request(room,revision,result);
           } else {
             const analysis = await (config.understand ?? understandIncident)(incident, { ...ai, selectSegments: room.mode === 'assistant' });
             if (!room.closed && revision === room.revision) { room.understandResult = { revision, value: analysis }; emit(room, { type: 'understanding.update', analysis, revision }); }
@@ -147,10 +154,13 @@ export async function createVoiceServer(config = {}) {
     if (!equal(appToken(req), room.producer)) throw statusError('Acceso no autorizado', 401);
     return room;
   }
+  const store=config.evidenceStore ?? config.evidenceMcp ?? (process.env.TISKZ_AUDIO_API_URL ? evidenceApiClient() : evidenceClient());
+  const evidence = evidenceRoutes({authorizeRoom, body, store, capture, simulated:config.evidenceSimulated ?? process.env.TISKZ_EVIDENCE_SIMULATED === 'true'});
   const server = http.createServer(async (req, res) => {
     const send = (status, data) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(data)); };
     try {
       const url = new URL(req.url, 'http://localhost');
+      if (await evidence(req,res,url.pathname)) return;
       if (await phone.http(req, res, url.pathname)) return;
       if (req.method === 'GET' && url.pathname === '/health') return send(200, { ok: true, role: 'voz', webrtc: true, models: { transcription: 'gpt-live-transcribe', understanding: 'gpt-4.1-mini', detection: 'gpt-6-luna', assistant: 'gpt-live-1', voice: 'marin' }, configured: Boolean(apiKey) });
       const staticName = url.searchParams.get('asset') ?? (url.pathname === '/' ? 'index.html' : url.pathname.slice(1));
@@ -169,11 +179,12 @@ export async function createVoiceServer(config = {}) {
         if (!equal(appToken(req), accessCode)) throw statusError('Código de acceso incorrecto', 401);
         const input = await body(req);
         if (input.consentimiento_analisis !== true) throw statusError('Se requiere consentimiento de análisis', 400);
+        if (input.audio_capture_protocol !== undefined && input.audio_capture_protocol !== 1) throw statusError('Protocolo de captura no compatible',400);
         if (input.mode !== undefined && !['analysis', 'assistant'].includes(input.mode)) throw statusError('Modo de voz inválido', 400);
         if (input.mode === 'assistant' && input.consentimiento_voz_ia !== true) throw statusError('Se requiere autorización para conversar con voz de IA', 400);
         if (!apiKey) throw statusError('Falta acceso al modelo en el servidor', 503);
         if (rooms.size >= maxSessions) throw statusError('Hay sesiones activas; termina una antes de continuar', 429);
-        const room = { mode: input.mode ?? 'analysis', captions: new LiveCaptions(), delegations: new Set(), id: randomUUID(), producer: token(), observer: token(), clients: new Set(), transcripts: new Map(), turns: new Map(), revision: 0, detectRevision: 0, understandRevision: 0, closed: false, started: Date.now(), callId: null };
+        const room = { captureProtocol:input.audio_capture_protocol, evidenceConsent:input.consentimiento_conservacion === true, mode: input.mode ?? 'analysis', captions: new LiveCaptions(), delegations: new Set(), id: randomUUID(), producer: token(), observer: token(), clients: new Set(), transcripts: new Map(), turns: new Map(), revision: 0, detectRevision: 0, understandRevision: 0, closed: false, started: Date.now(), callId: null };
         rooms.set(room.id, room);
         room.expiry = setTimeout(() => void endRoom(room, 'expired'), sessionMs).unref();
         return send(201, { session_id: room.id, producer_token: room.producer, observer_token: room.observer, expires_at: new Date(Date.now() + sessionMs).toISOString(), mode: room.mode, model: room.mode === 'assistant' ? 'gpt-live-1' : 'gpt-live-transcribe', voice: room.mode === 'assistant' ? 'marin' : null, events_path: `/ws/calls?session=${room.id}&ticket=${room.observer}` });
@@ -199,7 +210,7 @@ export async function createVoiceServer(config = {}) {
           }
           const form = new FormData();
           form.set('sdp', input.sdp);
-          form.set('session', JSON.stringify({ type: 'transcription', audio: { input: { transcription: { model: 'gpt-live-transcribe', languages: ['es'], delay: 'low' }, turn_detection: null } } }));
+          form.set('session', JSON.stringify({ type: 'transcription', audio: { input: { transcription: { model: 'gpt-live-transcribe', languages: ['es'], prompt: 'Conversación en español de Perú a través del micrófono de un celular.', delay: 'low' }, turn_detection: null } } }));
           const upstream = await fetch(`${baseUrl}/realtime/calls`, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}` }, body: form, signal: AbortSignal.timeout(20000) });
           if (!upstream.ok) { console.error(JSON.stringify({ event: 'webrtc_offer_failed', status: upstream.status })); throw statusError('No se pudo negociar el audio con el transcriptor', 502); }
           let sdp = await upstream.text();
@@ -234,11 +245,13 @@ export async function createVoiceServer(config = {}) {
       client.send(JSON.stringify({ type: 'session.ready', session_id: room.id, producer, expires_at: new Date(room.started + sessionMs).toISOString() }));
       for (const event of room.transcripts.values()) client.send(JSON.stringify(event));
       if (room.lastRisk) client.send(JSON.stringify(room.lastRisk));
+      if (producer) capture.replay(room,client);
       client.on('message', async raw => {
         let event; try { event = JSON.parse(raw.toString()); } catch { return; }
         if (!event || typeof event !== 'object' || Array.isArray(event)) return;
         if (event.type === 'ping') { client.send(JSON.stringify({ type: 'pong' })); return; }
         if (event.type === 'session.start') { client.send(JSON.stringify({ type: 'agent.status', status: room.negotiated ? 'screening' : 'connecting' })); return; }
+        if (producer && ['audio.capture_received','audio.capture_failed'].includes(event.type)) { capture.clientEvent(room,event);return; }
         if (event.type === 'transcript.update' && producer && room.mode === 'analysis') ingestTranscript(room, event);
         if (event.type === 'live.event' && producer && event.event && typeof event.event === 'object') ingestLive(room, event.event);
         if (event.type === 'user.decision') {

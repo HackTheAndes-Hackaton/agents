@@ -1,0 +1,23 @@
+{
+  "synthetic_audio": true,
+  "organization": "org_vecinal",
+  "stored": true,
+  "reproduced": true,
+  "cleaned": true,
+  "retry_same_id": true,
+  "without_storage_consent_denied": true,
+  "simulated": true,
+  "no_voice_reference": true,
+  "no_identity": true,
+  "verified_at": "2026-10-18T02:10:40.847364+00:00",
+  "mcp_url": "https://web-repo-xi.vercel.app/api/v1/mcp",
+  "agent": "andes-voz",
+  "agent_id": "ebf0eb81-42c0-4437-a044-1af84af1b755",
+  "runtime_sha256": "4be8e6fda397ac5d4ee64e8f3cda5783e6614659d4a332d4e7a3e4ad0f481b47",
+  "tests": {
+    "backend": 37,
+    "web": 10,
+    "android_unit": 43
+  },
+  "physical_device_tested": false
+}
