@@ -210,7 +210,7 @@ export async function createVoiceServer(config = {}) {
           }
           const form = new FormData();
           form.set('sdp', input.sdp);
-          form.set('session', JSON.stringify({ type: 'transcription', audio: { input: { transcription: { model: 'gpt-live-transcribe', languages: ['es'], delay: 'low' }, turn_detection: null } } }));
+          form.set('session', JSON.stringify({ type: 'transcription', audio: { input: { transcription: { model: 'gpt-live-transcribe', languages: ['es'], prompt: 'Conversación en español de Perú a través del micrófono de un celular.', delay: 'low' }, turn_detection: null } } }));
           const upstream = await fetch(`${baseUrl}/realtime/calls`, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}` }, body: form, signal: AbortSignal.timeout(20000) });
           if (!upstream.ok) { console.error(JSON.stringify({ event: 'webrtc_offer_failed', status: upstream.status })); throw statusError('No se pudo negociar el audio con el transcriptor', 502); }
           let sdp = await upstream.text();
