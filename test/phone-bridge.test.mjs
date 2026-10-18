@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { once } from 'node:events';
 import { WebSocket } from 'ws';
-import { createPhoneBridge } from '../phone-bridge.mjs';
+import { createPhoneBridge, endVapiCall, vapiControlUrl } from '../phone-bridge.mjs';
 const secret = 'test-webhook-secret-1234567890';
 const code = 'test-owner-private-code';
 const assistantId = 'test-assistant';
@@ -19,8 +19,8 @@ async function fixture(t, overrides = {}) {
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   const base = `http://127.0.0.1:${server.address().port}`;
   t.after(async () => { bridge.close(); await new Promise(r => server.close(r)); });
-  async function connect() {
-    const response = await fetch(base + '/v1/phone/monitor', { method: 'POST', headers: { 'X-Voice-Token': code, 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimiento_analisis: true }) });
+  async function connect(autoHangup = false) {
+    const response = await fetch(base + '/v1/phone/monitor', { method: 'POST', headers: { 'X-Voice-Token': code, 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimiento_analisis: true, consentimiento_corte_automatico: autoHangup }) });
     const { ticket } = await response.json();
     const ws = new WebSocket(base.replace('http:', 'ws:') + '/ws/calls?channel=phone&ticket=' + ticket);
     ws.on('message', raw => events.push(JSON.parse(raw)));
@@ -103,4 +103,93 @@ test('GPT-Live analiza solo finales del interlocutor y ordena reintentos sin mez
   await delay(20);
   assert.deepEqual(f.inputs, ['No necesito pagos ni datos personales.', 'Hola, confirmo la reunión.\nNo necesito pagos ni datos personales.']);
   assert.equal(f.events.filter(e => e.type === 'transcript.update').at(-1).source, 'vapi_transcript_final');
+});
+
+
+test('TRUE ordena corte una vez; confirma solicitud sin fingir que el proveedor ya colgó', async t => {
+  const endedCalls = [];
+  const f = await fixture(t, { endCall: async target => { endedCalls.push(target.id); return 'requested'; } });
+  await f.connect(true);
+  await f.post(conversation('Transfiere dinero o te haré daño.', 1));
+  await until(() => f.events.some(e => e.type === 'call.hangup_result'));
+  const order = f.events.find(e => e.type === 'call.hangup_requested');
+  assert.equal(order.call_id, id); assert.equal(order.session_id, id); assert.equal(order.revision, 1);
+  assert.equal(order.reason, 'risk_detected'); assert.match(order.request_id, /^[a-f0-9-]{36}$/);
+  assert.equal(f.events.some(e => e.type === 'call.ended'), false);
+  await f.post({ ...conversation('Otra amenaza.', 2), messages: [{ role:'user', message:'Otra amenaza.' }, { role:'user', message:'Paga.' }] });
+  await until(() => f.inputs.length === 2);
+  assert.deepEqual(endedCalls, [id]);
+  await f.post({type:'status-update',status:'ended',call:{id,assistantId}});
+  await until(() => f.events.some(e => e.type === 'call.ended'));
+});
+
+test('FALSE y falta de autorización de corte no cuelgan', async t => {
+  let cuts = 0;
+  const f = await fixture(t, { detect: async () => ({ alerta:false, probabilidad:.1 }), endCall:async()=>{cuts++;} });
+  await f.connect(true); await f.post(conversation('No necesito dinero.'));
+  await until(() => f.events.some(e=>e.type==='alert.updated'));
+  assert.equal(cuts,0); assert.equal(f.events.some(e=>e.type==='call.hangup_requested'),false);
+  const g = await fixture(t, {endCall:async()=>{cuts++;}});
+  await g.connect(false); await g.post(conversation('Paga ahora.'));
+  await until(() => g.events.some(e=>e.type==='alert.updated'));
+  assert.equal(cuts,0);
+});
+
+test('corte fallido se muestra como fallo y no como llamada terminada', async t => {
+  const f = await fixture(t, {endCall:async()=>{throw Error('offline');}});
+  await f.connect(true); await f.post(conversation('Amenaza ficticia.'));
+  await until(() => f.events.some(e=>e.type==='call.hangup_result'));
+  assert.equal(f.events.find(e=>e.type==='call.hangup_result').status,'failed');
+  assert.equal(f.events.some(e=>e.type==='call.ended'),false);
+});
+
+test('una detección obsoleta no corta una revisión corregida', async t => {
+  let resolveFirst; let count=0; let cuts=0;
+  const f=await fixture(t,{detect:async()=> ++count===1 ? new Promise(r=>{resolveFirst=r;}) : {alerta:false,probabilidad:0},endCall:async()=>{cuts++;}});
+  await f.connect(true); await f.post(conversation('Necesito dinero.',1));
+  await until(()=>resolveFirst);
+  await f.post(conversation('No necesito dinero.',2));
+  resolveFirst({alerta:true,probabilidad:1});
+  await until(()=>f.events.some(e=>e.type==='alert.updated'&&e.revision===2));
+  assert.equal(cuts,0);
+});
+
+test('la voz del agente se muestra pero nunca entra al detector', async t => {
+  const f=await fixture(t); await f.connect(); await f.post(conversation('No necesito pagos.',1));
+  await until(()=>f.inputs.length===1);
+  await f.post({type:'transcript',role:'assistant',transcriptType:'final',transcript:'¿Me estás pidiendo una transferencia?',timestamp:2,call:{id,assistantId}});
+  await until(()=>f.events.some(e=>e.speaker==='agent'));
+  assert.deepEqual(f.inputs,['No necesito pagos.']);
+});
+
+test('no permite vincular un segundo monitor automático ni una llamada preexistente', async t => {
+  const f=await fixture(t); await f.connect(true);
+  const response=await fetch(f.base+'/v1/phone/monitor',{method:'POST',headers:{'X-Voice-Token':code},body:JSON.stringify({consentimiento_analisis:true,consentimiento_corte_automatico:true})});
+  assert.equal(response.status,409);
+});
+
+test('control Vapi: valida destino, identidad, evita redirecciones y nunca envía API key al control', async () => {
+  const control=`https://phone-call-websocket.aws-us-west-2-backend-production3.vapi.ai/${id}/control`;
+  for(const bad of ['http://localhost/control', `https://evil.test/${id}/control`, `https://vapi.ai.evil.test/${id}/control`, control.replace(id,'otro'), control.replace('https://','https://user@')]) assert.equal(vapiControlUrl(bad,id),null);
+  const requests=[];
+  const fetch=async(url,init)=>{ requests.push({url,init}); return new Response(JSON.stringify(url.startsWith('https://api.vapi.ai/') ? {id,assistantId,monitor:{controlUrl:control}} : {})); };
+  assert.equal(await endVapiCall({id}, {apiKey:'private-test-key',assistantId,fetch}),'requested');
+  assert.equal(requests[0].init.headers.Authorization,'Bearer private-test-key');
+  assert.equal(requests[1].init.headers.Authorization,undefined);
+  assert.deepEqual(JSON.parse(requests[1].init.body),{type:'end-call'});
+  assert.equal(requests[1].init.redirect,'error');
+  await assert.rejects(endVapiCall({id},{apiKey:'test',assistantId,fetch:async()=>new Response(JSON.stringify({id,assistantId:'another',monitor:{controlUrl:control}}))}),/mismatch/);
+});
+
+
+test('diagnóstico autenticado no devuelve texto ni URLs privadas', async t => {
+ const f=await fixture(t); await f.connect();
+ const text='Texto sintético reservado para esta prueba.';
+ await f.post(conversation(text));
+ assert.equal((await fetch(f.base+'/v1/phone/diagnostics')).status,401);
+ const r=await fetch(f.base+'/v1/phone/diagnostics',{headers:{'X-Voice-Token':code}});
+ assert.equal(r.status,200);const d=await r.json();
+ assert.equal(d.received,1);assert.equal(d.lastEvent.assistantMatches,true);
+ assert.equal(JSON.stringify(d).includes(text),false);
+ assert.equal(JSON.stringify(d).includes(secret),false);
 });

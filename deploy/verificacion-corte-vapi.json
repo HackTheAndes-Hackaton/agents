@@ -1,0 +1,45 @@
+{
+  "fecha_lima": "2026-10-17",
+  "modelo_telefonico": "gpt-realtime-2",
+  "voz": "marin",
+  "asistente_version": "v12",
+  "runtime_sha256": "d0e3f1b5a73fb974dc8ebb0197f6cbfbf2baa8870abc67aadfae1c3a46cb256f",
+  "apk_version": "0.4.2",
+  "apk_sha256": "f11e97644b163072c7c055fdc7e99ecbd17b0c2207218bafdf354f97ca2f924a",
+  "pruebas_node": 50,
+  "pruebas_android": 51,
+  "casos": [
+    {
+      "caso": "riesgo",
+      "audio_sintetico": true,
+      "alerta": true,
+      "corte_solicitado": true,
+      "control_aceptado": true,
+      "fin_confirmado_por_webhook": true,
+      "estado_proveedor": "ended",
+      "motivo_fin": "assistant-ended-call-after-message-spoken",
+      "costo_prueba_usd": 0.086,
+      "criterios_funcionales_aprobados": true
+    },
+    {
+      "caso": "legitimo",
+      "audio_sintetico": true,
+      "alerta": false,
+      "corte_solicitado": false,
+      "control_aceptado": false,
+      "fin_confirmado_por_webhook": false,
+      "estado_proveedor": "ended",
+      "motivo_fin": "customer-ended-call",
+      "costo_prueba_usd": 0.0944,
+      "criterios_funcionales_aprobados": true
+    }
+  ],
+  "limites": [
+    "Audio sintético por WebSocket de Vapi; no demuestra el corte físico de Entel.",
+    "La conferencia administrada por Tiskz tiene lógica de corte validada por pruebas unitarias; falta teléfono físico.",
+    "La conferencia manual fuera de Tiskz permite cerrar solo Vapi desde el backend.",
+    "La negación de pagos fue literal con Realtime 2; persiste una palabra mal reconocida en la amenaza. No equivale a una evaluación general de precisión.",
+    "GPT-Live 1 por Vapi no entregó transcripciones en vivo en las pruebas de esta integración.",
+    "Modo automático de conferencia desactivado por defecto; no se confirma tarifa de Entel."
+  ]
+}
