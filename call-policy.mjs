@@ -11,7 +11,7 @@ const descriptions = {
   peticion_pago: 'una petición de dinero', peticion_credenciales: 'una petición de claves o códigos',
   acceso_remoto: 'una petición de acceso remoto', presion: 'presión para actuar de inmediato',
   aislamiento: 'restricciones para verificar por otro canal', amenaza: 'una posible amenaza',
-  solicitud: 'una petición que conviene aclarar',
+  solicitud: 'una petición que conviene aclarar', autoridad_alegada: 'una identidad declarada que aún no se ha comprobado',
 };
 
 // Política de orientación; no autoriza cortes, retención, SMS ni identifica voces.
@@ -26,7 +26,7 @@ export function assessCall({ transcript, decision, understanding }) {
   let state;
   if (validDecision && decision.alerta) state = 'alertar';
   else if (explicitGap || !validDecision || !grounded || !signals.length || signals.some(e => e.tipo === 'ambiguo')) state = 'inconcluso';
-  else if (signals.some(e => requests.has(e.tipo))) state = 'verificar';
+  else if (signals.some(e => requests.has(e.tipo) || e.tipo === 'autoridad_alegada')) state = 'verificar';
   else state = 'observar';
   const topics = [...new Set(signals.map(e => descriptions[e.tipo]).filter(Boolean))].slice(0, 3);
   const reason = explicitGap ? 'Hay un fragmento marcado como inaudible; hace falta aclaración.'
@@ -66,6 +66,10 @@ export function assessmentEvents(target, transcript) {
       risk_percent: Math.round(target.detectResult.value.probabilidad * 100), alerta: assessment.alerta,
       reasons: [assessment.motivo], scam_type: null, impersonating: null,
       score_kind: 'probabilidad_de_alerta_no_calibrada' });
+  }
+  // "Observar" solo permite incorporarse después de revisar el texto disponible; no verifica identidades.
+  if (!pendingAlert && assessment.estado === 'observar' && assessment.alerta === false) {
+    events.push({ type: 'call.ready_to_answer', revision: target.revision, identity_verified: false });
   }
   return events;
 }

@@ -80,6 +80,38 @@ test('orientación telefónica espera ambos agentes y entrega citas actuales sin
   assert.equal(f.events.some(e => e.type === 'call.hangup_requested'), false);
 });
 
+test('emite call.ready_to_answer solo tras observar y no repite una señal de revisión anterior', async t => {
+  let release;
+  const gate = new Promise(r => { release = r; }); t.after(() => release());
+  const firstText = 'No necesito pagos ni datos personales.';
+  const f = await fixture(t, {
+    detect: async () => ({ alerta: false, probabilidad: .1 }),
+    understand: async incident => {
+      if (incident.transcripcion === firstText) await gate;
+      const tipo = incident.transcripcion.includes('Soy tu familiar') ? 'autoridad_alegada' : 'negacion';
+      return { rol: 'comprension', evidencias: [{ tipo, cita: incident.transcripcion }] };
+    },
+  });
+  await f.connect();
+  await f.post(conversation(firstText, 1));
+  await until(() => f.events.some(e => e.type === 'alert.updated'));
+  assert.equal(f.events.some(e => e.type === 'call.ready_to_answer'), false);
+  release();
+  await until(() => f.events.some(e => e.type === 'call.ready_to_answer'));
+  const ready = f.events.find(e => e.type === 'call.ready_to_answer');
+  assert.equal(ready.session_id, id);
+  assert.equal(ready.revision, 1);
+  assert.equal(ready.identity_verified, false);
+
+  await f.post(conversation('Soy tu familiar.', 2));
+  await until(() => f.events.some(e => e.type === 'assessment.update' && e.revision === 2));
+  const beforeReconnect = f.events.length;
+  await f.connect();
+  await until(() => f.events.slice(beforeReconnect).some(e => e.type === 'phone.call'));
+  await delay(20);
+  assert.equal(f.events.slice(beforeReconnect).some(e => e.type === 'call.ready_to_answer'), false);
+});
+
 test('el turno telefónico final se analiza sin los dos segundos de espera artificial', async t => {
   const f = await fixture(t, { analysisMs: undefined }); await f.connect();
   const started = performance.now();

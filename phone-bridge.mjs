@@ -58,7 +58,7 @@ export function createPhoneBridge(config) {
       e.event_id = randomUUID(); call.pendingAcks.set(e.event_id, { type: e.type, sent: performance.now() });
       while (call.pendingAcks.size > 64) call.pendingAcks.delete(call.pendingAcks.keys().next().value);
     }
-    if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.hangup_requested', 'call.hangup_result', 'comparison.status', 'comparison.alert', 'transcript.comparison'].includes(e.type)) {
+    if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.ready_to_answer', 'call.hangup_requested', 'call.hangup_result', 'comparison.status', 'comparison.alert', 'transcript.comparison'].includes(e.type)) {
       const key = ['transcript.update', 'transcript.comparison'].includes(e.type) ? `${e.type}:${e.id}` : e.type;
       call.cache.set(key, e);
     }
@@ -235,7 +235,7 @@ export function createPhoneBridge(config) {
     }
     if (text.length > 12000) { emit({ type: 'error', message: 'Límite de análisis alcanzado.' }); finish('text_limit'); return; }
     if (!text.trim() || text === call.text) return;
-    call.source = source; call.text = text; call.revision++; call.captionReceivedAt = Date.now();
+    call.source = source; call.text = text; call.revision++; call.captionReceivedAt = Date.now(); call.cache.delete('call.ready_to_answer');
     if (transcript) caption('caller', event.timestamp, event.transcript);
     else emit({ type: 'transcript.update', id: 'phone-caller', speaker: 'caller', text, sequence: 0, final: false, revision: call.revision, source });
     if (!call.timer) call.timer = setTimeout(() => { const target = call; if (!target) return; target.timer = null; void analyze(target, 'detect'); void analyze(target, 'understand'); }, config.analysisMs ?? 250).unref();
@@ -290,7 +290,7 @@ export function createPhoneBridge(config) {
       wss.handleUpgrade(req, socket, head, ws => {
         ws.autoHangup = authorization.autoHangup;
         watchers.add(ws); send(ws, { type: 'phone.ready', number: config.number ?? null });
-        if (call) { send(ws, { type: 'phone.call', call_id: call.id }); for (const e of call.cache.values()) if (e.type !== 'assessment.update' || e.revision === call.revision) send(ws, e); }
+        if (call) { send(ws, { type: 'phone.call', call_id: call.id }); for (const e of call.cache.values()) if (!['assessment.update', 'call.ready_to_answer'].includes(e.type) || e.revision === call.revision) send(ws, e); }
         ws.on('message', (raw, binary) => {
           if (binary || raw.length > 512 || !call) return;
           let e; try { e = JSON.parse(raw); } catch { return; }

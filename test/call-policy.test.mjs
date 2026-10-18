@@ -33,6 +33,7 @@ test('texto o voz alegada no verifican identidad ni determinan si hay síntesis'
     const result = assess('Soy tu familiar, reconoce mi voz.', 'autoridad_alegada', d);
     assert.equal(result.voz_sintetica.estado, 'no_evaluada');
     assert.deepEqual(result.identidades_verificadas, []);
+    if (!d.alerta) assert.equal(result.estado, 'verificar');
   }
 });
 test('un marcador de audio faltante exige aclaración aunque comprensión lo clasifique como petición', () => {
@@ -78,4 +79,21 @@ test('TRUE publica alertar sin esperar comprensión; no inventa citas ni oculta 
   assert.equal(risk.risk_percent, 90);
   target.detectResult.value = decision(false);
   assert.deepEqual(assessmentEvents(target, 'Texto de ejemplo.'), []);
+});
+
+test('call.ready_to_answer solo se emite al terminar una revisión observar y no valida identidades', () => {
+  const text = 'No necesito pagos ni datos personales.';
+  const target = { revision: 6, detectResult: { revision: 6, value: decision() },
+    understandResult: { revision: 6, value: { rol: 'comprension', evidencias: [{ tipo: 'negacion', cita: text }] } } };
+  const events = assessmentEvents(target, text);
+  assert.deepEqual(events.map(e => e.type), ['assessment.update', 'risk.update', 'call.ready_to_answer']);
+  assert.equal(events.at(-1).revision, 6);
+  assert.equal(events.at(-1).identity_verified, false);
+
+  target.understandResult.value.evidencias = [{ tipo: 'autoridad_alegada', cita: 'Soy tu familiar.' }];
+  const claim = assessmentEvents(target, 'Soy tu familiar.');
+  assert.equal(claim[0].assessment.estado, 'verificar');
+  assert.equal(claim.some(e => e.type === 'call.ready_to_answer'), false);
+  target.detectResult.value = decision(true);
+  assert.equal(assessmentEvents(target, 'Soy tu familiar.').some(e => e.type === 'call.ready_to_answer'), false);
 });
