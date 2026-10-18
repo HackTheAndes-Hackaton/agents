@@ -6,6 +6,7 @@ import { assessmentEvents, currentAssessment } from './call-policy.mjs';
 import { createLivePhoneMcp } from './live-phone-mcp.mjs';
 import { startScribeComparison } from './scribe-sidecar.mjs';
 import { PhoneAudioWindow } from './phone-evidence.mjs';
+import { VoiceCollector, COLLECT_INSTRUCTION } from './voiceprint.mjs';
 
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 // El control llega de Vapi autenticado; nunca seguir URLs arbitrarias ni redirecciones.
@@ -36,6 +37,25 @@ export async function endVapiCall(target, config = {}) {
   if (!response.ok) throw Error('hangup_rejected');
   return 'requested'; // La confirmación definitiva llega con status-update: ended.
 }
+
+// Otras órdenes del control privado de Vapi (por ejemplo, una instrucción interna al agente).
+export async function sendVapiControl(target, body, config = {}) {
+  let url = vapiControlUrl(target.controlUrl, target.id);
+  const request = config.fetch ?? fetch;
+  if (!url && config.apiKey) {
+    const response = await request(`https://api.vapi.ai/call/${encodeURIComponent(target.id)}`, {
+      headers: { Authorization: `Bearer ${config.apiKey}`, 'User-Agent': 'vapi-cli/0.2.1' }, redirect: 'error', signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) throw Error('call_lookup_failed');
+    const data = await response.json();
+    if (data.id !== target.id || data.assistantId !== config.assistantId || data.status === 'ended') throw Error('call_mismatch');
+    url = vapiControlUrl(data.monitor?.controlUrl, target.id);
+  }
+  if (!url) throw Error('control_unavailable');
+  const response = await request(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'User-Agent': 'vapi-cli/0.2.1' },
+    body: JSON.stringify(body), redirect: 'error', signal: AbortSignal.timeout(5000) });
+  if (!response.ok) throw Error('control_rejected');
+}
 // Una línea de prueba, solo en memoria. Nunca recibe audio del teléfono Android.
 export function createPhoneBridge(config) {
   if (config.liveEnabled && (typeof config.liveSecret !== 'string' || config.liveSecret.length < 24 || !config.assistantId || (!config.apiKey && !config.liveLookupCall))) throw Error('GPT-Live MCP requiere secreto, asistente y verificación de llamada configurados');
@@ -43,6 +63,8 @@ export function createPhoneBridge(config) {
   const watchers = new Set(), ended = new Map(), tickets = new Map();
   const wss = new WebSocketServer({ noServer: true, maxPayload: 1024, perMessageDeflate: false });
   const enabled = Boolean(config.secret?.length >= 24 && config.assistantId);
+  // Huella vocal: solo con interruptor, motor cargado y panel configurado. GPT-Live no expone el audio.
+  const vp = !config.liveEnabled && config.voiceprint?.cfg?.enabled && config.voiceprint.engine && config.voiceprint.api?.configured ? config.voiceprint : null;
   let call = null, lastCall = null;
   function liveState(id) {
     if (!call || call.id !== id || call.closed) return { status: 'ended', revision: null, identity_verified: false };
@@ -102,6 +124,7 @@ export function createPhoneBridge(config) {
     evidence_fragment_id: target.evidenceFragmentId ?? null,
     evidence_incident_id: target.evidenceIncidentId ?? null,
     comparison: target.comparison?.metadata() ?? null,
+    voiceprint: target.voiceprintStatus ?? null,
     delivery: target.delivery ?? [] });
   const send = (ws, event) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(event)); };
   const emit = event => {
@@ -111,7 +134,7 @@ export function createPhoneBridge(config) {
       e.event_id = randomUUID(); call.pendingAcks.set(e.event_id, { type: e.type, sent: performance.now() });
       while (call.pendingAcks.size > 64) call.pendingAcks.delete(call.pendingAcks.keys().next().value);
     }
-    if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.ready_to_answer', 'call.hangup_requested', 'call.hangup_result', 'comparison.status', 'comparison.alert', 'transcript.comparison', 'audio.capture_result'].includes(e.type)) {
+    if (['assessment.update', 'risk.update', 'alert.updated', 'understanding.update', 'transcript.update', 'call.ready_to_answer', 'call.hangup_requested', 'call.hangup_result', 'comparison.status', 'comparison.alert', 'transcript.comparison', 'audio.capture_result', 'voice.match', 'voice.collecting'].includes(e.type)) {
       const key = ['transcript.update', 'transcript.comparison'].includes(e.type) ? `${e.type}:${e.id}` : e.type;
       call.cache.set(key, e);
     }
@@ -142,12 +165,16 @@ export function createPhoneBridge(config) {
       if (config.scribeEnabled) emit({ type: 'comparison.status', status: 'unavailable_in_vapi_live', comparison_only: true });
       return;
     }
-    if ((!config.scribeEnabled && !target.evidenceConsent) || !config.apiKey) return;
+    if ((!config.scribeEnabled && !target.evidenceConsent && !target.voiceConsent) || !config.apiKey) return;
     target.comparisonRevision = 0; target.comparisonProcessed = 0; target.comparisonText = '';
     target.comparison = (config.startComparison ?? startScribeComparison)({ apiKey: config.apiKey,
       callId: target.id, assistantId: config.assistantId,
       transcribe: config.scribeEnabled === true,
-      onAudio: (bytes, rate) => { if (target === call && !target.closed && target.evidenceConsent) target.audio.push(bytes, rate); },
+      onAudio: (bytes, rate) => {
+        if (target !== call || target.closed) return;
+        if (target.evidenceConsent) target.audio.push(bytes, rate);
+        if (target.voiceConsent) { target.voice.push(bytes, rate); voiceTick(target); }
+      },
       onStatus: e => { if (config.scribeEnabled && target === call && !target.closed) emit({ type: 'comparison.status', comparison_only: true, ...e }); },
       onCaption: e => {
         if (target !== call || target.closed || !watchers.size) return;
@@ -185,6 +212,84 @@ export function createPhoneBridge(config) {
       } catch { report('failed', { reason: 'storage_failed' }); }
       finally { wav.fill(0); }
     })();
+  }
+  function voiceTick(target) {
+    if (!vp || !target.voiceConsent || target.closed) return;
+    if (!target.voiceSearched && target.voice.activeSeconds >= vp.cfg.searchSeconds) { target.voiceSearched = true; void searchVoice(target); }
+    if (target.collecting && target.voice.activeSeconds >= vp.cfg.collectSeconds) void finishCollection(target, 'collected');
+  }
+  // Compara la voz con las de estafas ya guardadas. La huella de esta llamada no se guarda aquí.
+  async function searchVoice(target) {
+    const snap = target.voice.snapshot();
+    if (!snap) return;
+    try {
+      const embedding = await vp.engine.embed(snap.pcm, snap.rate);
+      const result = await vp.api.search({ embedding, model_id: vp.engine.model.id, model_version: vp.engine.model.version,
+        min_similarity: vp.cfg.notifySimilarity, simulated: vp.cfg.simulated });
+      embedding.fill(0);
+      if (target !== call || target.closed) return;
+      const similarity = Number(result.best_similarity);
+      if (!Number.isFinite(similarity) || similarity < vp.cfg.notifySimilarity) { target.voiceprintStatus = 'no_match'; return; }
+      const strong = similarity >= vp.cfg.strongSimilarity;
+      target.voiceMatch = { similarity, strong };
+      target.voiceprintStatus = strong ? 'strong_match' : 'match';
+      emit({ type: 'voice.match', similarity: Math.round(similarity * 100) / 100, strong,
+        cases: Number.isInteger(result.cases) ? result.cases : 0, reviewed_cases: Number.isInteger(result.reviewed_cases) ? result.reviewed_cases : 0,
+        last_seen_at: typeof result.last_seen_at === 'string' ? result.last_seen_at : null,
+        scam_type: typeof result.scam_type === 'string' ? result.scam_type : null,
+        impersonating: typeof result.impersonating === 'string' ? result.impersonating : null,
+        identity_verified: false });
+    } catch { if (target === call && !target.closed) target.voiceprintStatus = 'search_failed'; }
+    finally { snap.pcm.fill(0); }
+  }
+  // Estafa casi segura: el agente alarga la conversación para juntar voz antes de cortar.
+  function beginCollection(target, revision) {
+    if (!vp || !target.voiceConsent || !target.autoHangup || target.voiceEnrolled || target.closed) return false;
+    if (target.collecting) return true;
+    const probability = target.detectResult?.value?.probabilidad;
+    if (!(probability >= vp.cfg.confirmProbability || target.voiceMatch?.strong)) return false;
+    target.collecting = true; target.collectRevision = revision; target.voiceprintStatus = 'collecting';
+    emit({ type: 'voice.collecting', status: 'started', target_seconds: vp.cfg.collectSeconds, identity_verified: false });
+    void (config.sendControl ?? sendVapiControl)(target, { type: 'add-message', message: { role: 'system', content: COLLECT_INSTRUCTION }, triggerResponseEnabled: false },
+      { apiKey: config.apiKey, assistantId: config.assistantId }).catch(() => {});
+    target.collectTimer = setTimeout(() => void finishCollection(target, 'time_limit'), vp.cfg.collectMaxMs);
+    target.collectTimer.unref?.();
+    voiceTick(target);
+    return true;
+  }
+  async function finishCollection(target, reason) {
+    if (!target.collecting) return;
+    target.collecting = false; clearTimeout(target.collectTimer);
+    const status = await enrollVoice(target);
+    if (target !== call || target.closed) return;
+    emit({ type: 'voice.collecting', status, reason, identity_verified: false });
+    const alert = target.detectResult?.value?.alerta === true;
+    void stopForRisk(target, alert ? target.detectResult.revision : target.collectRevision);
+  }
+  // Guarda la huella solo de una estafa confirmada. La copia del audio se toma antes de cualquier espera.
+  async function enrollVoice(target) {
+    if (target.voiceEnrolled) return 'saved';
+    const snap = target.voice.snapshot();
+    if (!snap || snap.activeSeconds < vp.cfg.minEnrollSeconds) { snap?.pcm.fill(0); target.voiceprintStatus = 'insufficient_audio'; return 'insufficient_audio'; }
+    target.voiceEnrolled = true;
+    try {
+      const parts = [snap.pcm];
+      if (snap.activeSeconds >= vp.cfg.minEnrollSeconds * 2) {
+        const half = Math.floor(snap.pcm.length / 4) * 2;
+        parts.push(snap.pcm.subarray(0, half), snap.pcm.subarray(half));
+      }
+      const embeddings = [];
+      for (const part of parts) embeddings.push(await vp.engine.embed(part, snap.rate));
+      await vp.api.enroll({ request_id: randomUUID(), session_id: target.id, model_id: vp.engine.model.id, model_version: vp.engine.model.version,
+        embeddings, active_s: Math.round(snap.activeSeconds * 100) / 100,
+        risk_score: Math.round((target.detectResult?.value?.probabilidad ?? 0) * 100),
+        voice_match_similarity: target.voiceMatch?.similarity ?? null,
+        caller_number: target.callerNumber ?? null, simulated: vp.cfg.simulated });
+      for (const e of embeddings) e.fill(0);
+      target.voiceprintStatus = 'saved';
+      return 'saved';
+    } catch { target.voiceEnrolled = false; target.voiceprintStatus = 'save_failed'; return 'failed'; }
+    finally { snap.pcm.fill(0); }
   }
   function caption(speaker, at, text, provenance = {}) {
     const id = `phone-${speaker}-${at}`;
@@ -228,6 +333,9 @@ export function createPhoneBridge(config) {
     liveMcp.clearCall(call.id);
     call.comparison?.close();
     call.audio.clear();
+    // Si la estafa ya estaba confirmada y cuelgan antes de tiempo, se guarda lo que se alcanzó a juntar.
+    if (vp && call.collecting) { call.collecting = false; clearTimeout(call.collectTimer); void enrollVoice(call); }
+    call.voice?.clear();
     if (config.scribeEnabled && call.comparison) emit({ type: 'comparison.status', status: call.comparison.metadata().status, comparison_only: true });
     if (reason === 'provider_ended' && call.hangupRequested) call.hangupStatus = 'confirmed';
     lastCall = { ...callMetadata(call), end_reason: reason, ended_at: new Date().toISOString() };
@@ -270,7 +378,10 @@ export function createPhoneBridge(config) {
             if (event.type === 'assessment.update') { target.assessmentState = event.assessment.estado; target.assessmentRevision = revision; }
             emit(event);
           }
-          if (component === 'detect' && target.detectResult?.value?.alerta === true) { saveEvidence(target, revision); void stopForRisk(target, revision); }
+          if (component === 'detect' && target.detectResult?.value?.alerta === true) {
+            saveEvidence(target, revision);
+            if (!beginCollection(target, revision)) void stopForRisk(target, revision);
+          }
         }
       }
     } finally { target[component] = false; }
@@ -322,7 +433,9 @@ export function createPhoneBridge(config) {
     if (call && call.id !== id) return;
     if (!call) {
       call = { id, started: Date.now(), liveInput: config.liveEnabled === true, text: '', count: 0, at: -1, revision: 0, detectRevision: 0, understandRevision: 0, cache: new Map(), turns: new Map(), captions: new Map(), pendingAcks: new Map(), delivery: [], source: null, closed: false, autoHangup: [...watchers].some(ws => ws.autoHangup), controlUrl: null,
-        evidenceConsent: config.evidenceEnabled === true && [...watchers].some(ws => ws.evidenceConsent), audio: new PhoneAudioWindow() };
+        evidenceConsent: config.evidenceEnabled === true && [...watchers].some(ws => ws.evidenceConsent), audio: new PhoneAudioWindow(),
+        voiceConsent: Boolean(vp) && [...watchers].some(ws => ws.voiceConsent), voice: new VoiceCollector({ maxSeconds: 30 }),
+        callerNumber: [...watchers].find(ws => ws.callerNumber)?.callerNumber ?? null };
       call.expiry = setTimeout(() => finish('analysis_expired'), config.ttlMs ?? 4 * 60000).unref();
       emit({ type: 'phone.call', call_id: id });
       emit({ type: 'agent.status', status: 'screening' });
@@ -404,7 +517,9 @@ export function createPhoneBridge(config) {
           for (const [ticket, value] of tickets) if (value.expiry < Date.now()) tickets.delete(ticket);
           if (tickets.size >= 6) { respond(429, { error: 'Espera un minuto antes de volver a conectar' }); return true; }
           const ticket = randomBytes(24).toString('base64url'), expiry = Date.now() + 60000;
-          tickets.set(ticket, { expiry, autoHangup, evidenceConsent: autoHangup && input.consentimiento_conservacion === true }); respond(201, { ticket, expires_at: new Date(expiry).toISOString() });
+          const callerNumber = typeof input.numero_llamante === 'string' && /^\+?\d{6,15}$/.test(input.numero_llamante) ? input.numero_llamante : null;
+          tickets.set(ticket, { expiry, autoHangup, evidenceConsent: autoHangup && input.consentimiento_conservacion === true,
+            voiceConsent: input.consentimiento_huella_voz === true, callerNumber }); respond(201, { ticket, expires_at: new Date(expiry).toISOString() });
         } catch { respond(400, { error: 'Solicitud inválida' }); }
         return true;
       }
@@ -433,6 +548,8 @@ export function createPhoneBridge(config) {
       wss.handleUpgrade(req, socket, head, ws => {
         ws.autoHangup = authorization.autoHangup;
         ws.evidenceConsent = authorization.evidenceConsent;
+        ws.voiceConsent = authorization.voiceConsent === true;
+        ws.callerNumber = authorization.callerNumber ?? null;
         watchers.add(ws); send(ws, { type: 'phone.ready', number: config.number ?? null });
         if (call) { send(ws, { type: 'phone.call', call_id: call.id }); for (const e of call.cache.values()) if (!['assessment.update', 'call.ready_to_answer'].includes(e.type) || e.revision === call.revision) send(ws, e); }
         ws.on('message', (raw, binary) => {
@@ -448,6 +565,9 @@ export function createPhoneBridge(config) {
         ws.on('close', () => {
           watchers.delete(ws);
           if (ws.evidenceConsent && call) { call.evidenceConsent = false; call.audio.clear(); }
+          if (ws.voiceConsent && call && ![...watchers].some(other => other.voiceConsent)) {
+            call.voiceConsent = false; call.collecting = false; clearTimeout(call.collectTimer); call.voice.clear();
+          }
           if (!watchers.size) finish('monitor_stopped');
         });
       });
