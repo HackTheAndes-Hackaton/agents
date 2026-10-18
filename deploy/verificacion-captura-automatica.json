@@ -1,0 +1,25 @@
+{
+  "synthetic_transcripts_and_audio": true,
+  "storage_transport": "HTTP API",
+  "organization": "org_vecinal",
+  "risk_alert": true,
+  "automatic_order": true,
+  "saved_confirmation": true,
+  "retry_same_id": true,
+  "identical_audio": true,
+  "marked_as_simulation": true,
+  "safe_no_order": true,
+  "cleaned": true,
+  "verified_at": "2026-10-18T02:29:21.575230+00:00",
+  "agent": "andes-voz",
+  "agent_id": "ebf0eb81-42c0-4437-a044-1af84af1b755",
+  "runtime_sha256": "1ffdfe8e33b3285508c2fcb87a8d6987af38112dff7862d0346adafb7efe5b46",
+  "tests": {
+    "backend": 42,
+    "web": 11,
+    "android_unit": 45
+  },
+  "apk_version": "0.4.0",
+  "apk_sha256": "9a8de8806aabcce80902255539fbc2f6cbb3d7475f00cdd95519a39e0bf875ef",
+  "physical_device_tested": false
+}
