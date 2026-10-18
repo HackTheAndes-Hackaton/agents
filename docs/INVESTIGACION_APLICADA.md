@@ -46,6 +46,10 @@ La ejecución descubrió un fallo de comprensión en `c19`: el texto con `[inaud
 
 `eval/evaluate.mjs` mide falsas alertas durante toda la llamada, alertas prematuras, casos omitidos y demora desde el turno decisivo; no solo el resultado final. Reporta fallos y cobertura junto a métricas condicionadas a respuestas válidas, para no esconder un proveedor caído. El Brier es descriptivo sobre etiquetas propuestas, no una calibración. No se ajustó el umbral con estos ejemplos.
 
+## Despliegue verificado
+
+La actualización se publicó en `andes-voz` después de comprobar que no había llamada telefónica ni monitor conectado. [Verificación del servidor desplegado](verificacion-orientacion.json): estado activo, `/health` y `/chat` responden 200. Dos sesiones sintéticas por el WebSocket público confirmaron `verificar` ante «Necesito dinero» e `inconcluso` ante una petición con `[inaudible]`. Se cerraron ambas sesiones. Esto prueba el transporte y análisis de texto; no prueba el audio de Vapi ni una APK física.
+
 ## Reproducir
 
 Pruebas deterministas, sin consumir créditos:
