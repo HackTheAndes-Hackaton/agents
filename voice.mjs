@@ -183,7 +183,7 @@ export async function createVoiceServer(config = {}) {
         res.writeHead(200, { 'Content-Type': staticName.endsWith('.js') ? 'text/javascript; charset=utf-8' : staticName.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' wss:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'" });
         return res.end(files.get(staticName));
       }
-      if (req.method === 'POST' && url.pathname === '/chat') return send(200, { response: 'Servicio de voz Tiskz. Abre la página HTTPS para iniciar una sesión autorizada de WebRTC.' });
+      if (req.method === 'POST' && url.pathname === '/chat') return send(200, { response: 'Servicio de voz PhoneWard. Abre la página HTTPS para iniciar una sesión autorizada de WebRTC.' });
       if (req.method === 'POST' && url.pathname === '/v1/sessions') {
         const ip = req.socket.remoteAddress ?? 'unknown';
         const now = Date.now();
