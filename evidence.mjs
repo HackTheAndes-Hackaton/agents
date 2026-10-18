@@ -32,7 +32,7 @@ export function evidenceClient(config = {}) {
   };
 }
 
-export function evidenceRoutes({authorizeRoom, body, mcp}) {
+export function evidenceRoutes({authorizeRoom, body, mcp, simulated = false}) {
   return async (req,res,path) => {
     const match=path.match(/^\/v1\/sessions\/([a-f0-9-]+)\/evidence(?:\/(clip_[a-f0-9]{48}))?$/);
     if (!match) return false;
@@ -46,7 +46,7 @@ export function evidenceRoutes({authorizeRoom, body, mcp}) {
         const input=await body(req,650000);
         if (!input || typeof input.audio_base64!=='string' || !/^[a-f0-9-]{36}$/i.test(input.request_id ?? '') || Object.keys(input).some(k=>!['request_id','audio_base64'].includes(k))) throw error('Fragmento inválido.',400);
         const risk=room.lastDecision?.alerta === true ? Math.round(room.lastDecision.probabilidad*100) : null;
-        const content=await mcp('guardar_fragmento',{session_id:room.id,request_id:input.request_id,consentimiento_conservacion:true,audio_base64:input.audio_base64,source:'webrtc_microphone',risk_percent:risk});
+        const content=await mcp('guardar_fragmento',{session_id:room.id,request_id:input.request_id,consentimiento_conservacion:true,audio_base64:input.audio_base64,source:'webrtc_microphone',risk_percent:risk,simulated});
         const data=JSON.parse(content.find(c=>c.type==='text')?.text ?? 'null');
         if (!data?.id) throw error('MCP no confirmó el guardado.',502);
         respond(201,{data});

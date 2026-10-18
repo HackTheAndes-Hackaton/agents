@@ -148,7 +148,7 @@ export async function createVoiceServer(config = {}) {
     if (!equal(appToken(req), room.producer)) throw statusError('Acceso no autorizado', 401);
     return room;
   }
-  const evidence = evidenceRoutes({authorizeRoom, body, mcp:config.evidenceMcp ?? evidenceClient()});
+  const evidence = evidenceRoutes({authorizeRoom, body, mcp:config.evidenceMcp ?? evidenceClient(), simulated:config.evidenceSimulated ?? process.env.TISKZ_EVIDENCE_SIMULATED === 'true'});
   const server = http.createServer(async (req, res) => {
     const send = (status, data) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(data)); };
     try {
