@@ -195,8 +195,11 @@ test('alerta y corte no esperan a la comprensión; una revisión antigua no auto
   const f = await fixture(t, { detect: async () => ({ alerta: true, probabilidad: .99 }), understand: async () => { await gate; return { rol: 'comprension', evidencias: [] }; } });
   await f.connect(true); const result = f.evaluate('Amenaza ficticia para el ensayo.');
   await until(() => f.cuts() === 1);
+  // El control del servidor puede terminar antes de que el cliente reciba el WebSocket.
+  await until(() => f.events.some(e => e.type === 'call.hangup_requested'));
   const state = f.events.find(e => e.type === 'assessment.update'); assert.equal(state.assessment.estado, 'alertar');
   assert.equal(state.explanation_pending, true);
+  assert.ok(f.events.indexOf(state) < f.events.findIndex(e => e.type === 'call.hangup_requested'));
   release(); await result;
   await f.tool('solicitar_corte', { revision: 1 }); assert.equal(f.cuts(), 1);
 });
