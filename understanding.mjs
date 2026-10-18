@@ -11,8 +11,9 @@ export async function understandIncident(incident, options) {
   const format = segments ? { type: 'json_schema', json_schema: { name: 'seleccion_fragmentos', strict: true, schema: {
     type: 'object', additionalProperties: false, required: ['rol', 'evidencias'], properties: {
       rol: { type: 'string', enum: ['comprension'] }, evidencias: { type: 'array', maxItems: 8, items: {
-        type: 'object', additionalProperties: false, required: ['tipo', 'segmento'], properties: {
-          tipo: { type: 'string', enum: Object.keys(kinds) }, segmento: { type: 'string', enum: segments.map(s => s.id) },
+        type: 'object', additionalProperties: false, required: ['tipos', 'segmento'], properties: {
+          tipos: { type: 'array', minItems: 1, maxItems: 4, items: { type: 'string', enum: Object.keys(kinds) } },
+          segmento: { type: 'string', enum: segments.map(s => s.id) },
         },
       } },
     },
@@ -86,9 +87,13 @@ export function understandingSegments(transcript) {
 export function groundSegmentSelection(raw, segments, transcript) {
   if (raw?.rol !== 'comprension' || !Array.isArray(raw.evidencias) || raw.evidencias.length > 8) throw Error('Selección inválida');
   const selected = new Map(segments.map(s => [s.id, s.texto]));
-  const evidencias = raw.evidencias.map(e => {
+  const evidencias = raw.evidencias.flatMap(e => {
     if (!e || typeof e.segmento !== 'string' || !selected.has(e.segmento)) throw Error('Segmento sin respaldo');
-    return { tipo: e.tipo, cita: selected.get(e.segmento) };
+    // Una misma frase puede pedir un pago y amenazar: no obligar al modelo a elegir solo una conducta.
+    // Se mantiene el formato anterior para pruebas y consumidores existentes.
+    const types = Array.isArray(e.tipos) ? e.tipos : [e.tipo];
+    if (!types.length || types.length > 4 || new Set(types).size !== types.length) throw Error('Tipos inválidos');
+    return types.map(tipo => ({ tipo, cita: selected.get(e.segmento) }));
   });
   return groundUnderstanding({ rol: 'comprension', evidencias }, transcript);
 }

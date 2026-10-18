@@ -1,0 +1,204 @@
+{
+  "corpus": "modalidades-campus-es-v1",
+  "development_only": true,
+  "before": {
+    "synthetic": true,
+    "real_calls": false,
+    "independent_benchmark": false,
+    "rows": [
+      {
+        "id": "extorsion",
+        "expected_alert": true,
+        "alert": true,
+        "expected_category": "posible_extorsion",
+        "category": null,
+        "probability": 1,
+        "types": [
+          "amenaza",
+          "presion",
+          "aislamiento"
+        ],
+        "elapsed_ms": 1295,
+        "pass": false
+      },
+      {
+        "id": "otp",
+        "expected_alert": true,
+        "alert": true,
+        "expected_category": "posible_fraude_credenciales",
+        "category": "posible_fraude_credenciales",
+        "probability": 1,
+        "types": [
+          "autoridad_alegada",
+          "peticion_credenciales"
+        ],
+        "elapsed_ms": 999,
+        "pass": true
+      },
+      {
+        "id": "remoto",
+        "expected_alert": true,
+        "alert": true,
+        "expected_category": "posible_fraude_acceso_remoto",
+        "category": "posible_fraude_acceso_remoto",
+        "probability": 0.99,
+        "types": [
+          "autoridad_alegada",
+          "acceso_remoto",
+          "aislamiento"
+        ],
+        "elapsed_ms": 922,
+        "pass": true
+      },
+      {
+        "id": "reunion",
+        "expected_alert": false,
+        "alert": false,
+        "expected_category": null,
+        "category": null,
+        "probability": 0,
+        "types": [
+          "presentacion",
+          "solicitud_cotidiana",
+          "negacion"
+        ],
+        "elapsed_ms": 1027,
+        "pass": true
+      },
+      {
+        "id": "denuncia",
+        "expected_alert": false,
+        "alert": false,
+        "expected_category": null,
+        "category": null,
+        "probability": 0,
+        "types": [
+          "relato_amenaza",
+          "solicitud_cotidiana",
+          "negacion"
+        ],
+        "elapsed_ms": 975,
+        "pass": true
+      },
+      {
+        "id": "prestamo",
+        "expected_alert": false,
+        "alert": false,
+        "expected_category": null,
+        "category": null,
+        "probability": 0.26,
+        "types": [
+          "solicitud",
+          "verificacion_independiente"
+        ],
+        "elapsed_ms": 895,
+        "pass": true
+      }
+    ],
+    "passed": 5,
+    "total": 6
+  },
+  "after": {
+    "synthetic": true,
+    "real_calls": false,
+    "independent_benchmark": false,
+    "rows": [
+      {
+        "id": "extorsion",
+        "expected_alert": true,
+        "alert": true,
+        "expected_category": "posible_extorsion",
+        "category": "posible_extorsion",
+        "probability": 1,
+        "types": [
+          "peticion_pago",
+          "amenaza",
+          "condicion",
+          "presion",
+          "aislamiento"
+        ],
+        "elapsed_ms": 1071,
+        "pass": true
+      },
+      {
+        "id": "otp",
+        "expected_alert": true,
+        "alert": true,
+        "expected_category": "posible_fraude_credenciales",
+        "category": "posible_fraude_credenciales",
+        "probability": 1,
+        "types": [
+          "autoridad_alegada",
+          "peticion_credenciales"
+        ],
+        "elapsed_ms": 987,
+        "pass": true
+      },
+      {
+        "id": "remoto",
+        "expected_alert": true,
+        "alert": true,
+        "expected_category": "posible_fraude_acceso_remoto",
+        "category": "posible_fraude_acceso_remoto",
+        "probability": 0.99,
+        "types": [
+          "autoridad_alegada",
+          "acceso_remoto",
+          "solicitud",
+          "aislamiento",
+          "condicion"
+        ],
+        "elapsed_ms": 1068,
+        "pass": true
+      },
+      {
+        "id": "reunion",
+        "expected_alert": false,
+        "alert": false,
+        "expected_category": null,
+        "category": null,
+        "probability": 0,
+        "types": [
+          "presentacion",
+          "solicitud_cotidiana",
+          "negacion"
+        ],
+        "elapsed_ms": 983,
+        "pass": true
+      },
+      {
+        "id": "denuncia",
+        "expected_alert": false,
+        "alert": false,
+        "expected_category": null,
+        "category": null,
+        "probability": 0,
+        "types": [
+          "relato_amenaza",
+          "solicitud_cotidiana",
+          "negacion"
+        ],
+        "elapsed_ms": 1025,
+        "pass": true
+      },
+      {
+        "id": "prestamo",
+        "expected_alert": false,
+        "alert": false,
+        "expected_category": null,
+        "category": null,
+        "probability": 0.26,
+        "types": [
+          "peticion_pago",
+          "condicion",
+          "verificacion_independiente"
+        ],
+        "elapsed_ms": 927,
+        "pass": true
+      }
+    ],
+    "passed": 6,
+    "total": 6
+  },
+  "runtime_hash": "1f0486634f6b8bff152b8d733725d9aacb2d73fb3d1f3c5d0fea0871d4d95a4f"
+}

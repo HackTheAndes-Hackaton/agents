@@ -60,5 +60,16 @@ test('comprensión Live: exige ids con esquema cerrado y mantiene validación li
   const result=await understandIncident({transcripcion:'No necesito pagos ni datos personales',consentimiento_analisis:true},{baseUrl:`http://127.0.0.1:${provider.address().port}`,apiKey:'fake',selectSegments:true});
   assert.equal(request.response_format.type,'json_schema');assert.equal(request.response_format.json_schema.strict,true);
   assert.deepEqual(request.response_format.json_schema.schema.properties.evidencias.items.properties.segmento.enum,['s0']);
+  assert.equal(request.response_format.json_schema.schema.properties.evidencias.items.properties.tipos.type, 'array');
   assert.equal(result.evidencias[0].cita,'No necesito pagos ni datos personales');
+});
+
+test('un segmento conserva amenaza, pago y condición como conductas distintas sin inventar texto', () => {
+  const text = 'Transfiere quinientos soles o le haré daño a tu familia.';
+  const segments = understandingSegments(text);
+  const r = groundSegmentSelection({rol:'comprension',evidencias:[{segmento:'s0',tipos:['amenaza','peticion_pago','condicion']}]},segments,text);
+  assert.deepEqual(r.evidencias.map(e=>e.tipo),['amenaza','peticion_pago','condicion']);
+  assert.ok(r.evidencias.every(e=>e.cita===text));
+  assert.throws(()=>groundSegmentSelection({rol:'comprension',evidencias:[{segmento:'s0',tipos:['amenaza','amenaza']}]},segments,text));
+  assert.throws(()=>groundSegmentSelection({rol:'comprension',evidencias:[{segmento:'s0',tipos:['identidad_verificada']}]},segments,text));
 });

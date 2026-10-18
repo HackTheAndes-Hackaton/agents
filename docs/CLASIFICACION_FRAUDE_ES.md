@@ -36,3 +36,11 @@
 La APK 0.4.9 muestra el tipo en la llamada y su detalle, junto a citas y enlaces de un catálogo fijo. Conserva esos datos en el historial existente. Actualizaciones nuevas retiran tipos anteriores para no arrastrar una acusación. La voz puede aportar `scam_type` de reportes previos: la app lo etiqueta como antecedente, separado del contenido actual, sin convertirlo en identidad o clasificación de la nueva llamada. Si esos reportes no tienen un tipo, no se inventa.
 
 El porcentaje, la decisión de alerta, los permisos de conservación y la política de corte permanecen independientes de la modalidad. Son pruebas de integración y reglas con ejemplos ficticios; no equivalen a entrenar un modelo ni a medir sensibilidad/especificidad en llamadas reales peruanas.
+
+## Comprobación con modelos reales
+
+Se observó una omisión concreta: el selector de un solo tipo marcó amenaza, pero perdió el pago en una misma oración, impidiendo clasificar la extorsión aunque el detector alertó. La selección por segmento ahora admite de una a cuatro etiquetas, con ocho etiquetas totales y copia literal por ID. Mantiene el formato anterior de entrada y las validaciones de anclaje. Las instrucciones distinguen actos actuales de pagos o amenazas citados en un relato.
+
+La comprobación de desarrollo con los modelos del servidor, sobre los seis textos ficticios de `eval/modalidades-campus-es-v1.json`, pasó las seis alertas/tipos esperados, además de retirar etiquetas de petición de pago en un relato y en una solicitud de cancelar un cargo. El análisis paralelo de texto tardó 927–1071 ms en esa ejecución; no incluye recepción telefónica, transcripción, respuesta hablada ni entrega a Android. El resultado anterior perdió el tipo de extorsión. Se conservaron ambos resultados en `eval/results/modalidades-campus-2026-10-18.json`. Son casos usados durante el ajuste, no una prueba independiente ni garantía de exactitud.
+
+Validación final: 162 pruebas Node y 81 pruebas Android, compilación y lint. Las categorías no añaden una consulta extra al modelo. La prueba de texto no sustituye una llamada física con la APK actualizada.

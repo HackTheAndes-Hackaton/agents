@@ -1,0 +1,50 @@
+{
+  "version": "modalidades-campus-es-v1",
+  "synthetic": true,
+  "independent_benchmark": false,
+  "cases": [
+    {
+      "id": "extorsion",
+      "text": "Transfiere quinientos soles por Yape o le haré daño a tu familia. No lo consultes con nadie.",
+      "alert": true,
+      "category": "posible_extorsion"
+    },
+    {
+      "id": "otp",
+      "text": "Soy del banco. Para cancelar una compra que no reconoces, necesito el código de acceso que llegó a tu celular.",
+      "alert": true,
+      "category": "posible_fraude_credenciales"
+    },
+    {
+      "id": "remoto",
+      "forbidden": [
+        "peticion_pago"
+      ],
+      "text": "Soy del soporte bancario. Instala la aplicación y dame control remoto de tu equipo para cancelar el cargo. No verifiques con otro asesor.",
+      "alert": true,
+      "category": "posible_fraude_acceso_remoto"
+    },
+    {
+      "id": "reunion",
+      "text": "Soy un particular. Solo quiero coordinar una reunión mañana. No necesito dinero ni claves ni códigos.",
+      "alert": false,
+      "category": null
+    },
+    {
+      "id": "denuncia",
+      "forbidden": [
+        "peticion_pago",
+        "amenaza"
+      ],
+      "text": "Me amenazaron pidiendo dinero. Necesito orientación para denunciar. No te pido que transfieras ni que compartas códigos.",
+      "alert": false,
+      "category": null
+    },
+    {
+      "id": "prestamo",
+      "text": "Necesito un préstamo, si no puedes hoy no pasa nada. Podemos comprobarlo llamando al número que ya tenías guardado.",
+      "alert": false,
+      "category": null
+    }
+  ]
+}
