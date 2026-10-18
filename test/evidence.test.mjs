@@ -35,8 +35,8 @@ test('evidencia exige permiso separado y ticket productor; no acepta identidad o
 });
 
 test('cliente MCP protege credenciales en errores, no sigue redirecciones y procesa SSE',async()=>{
-  const client=evidenceClient({url:'https://mcp.test',key:'private-synthetic',org:'org_vecinal',fetch:async(url,options)=>{
-    assert.equal(options.redirect,'error');assert.equal(options.headers['X-Tiskz-Org'],'org_vecinal');
+  const client=evidenceClient({url:'https://mcp.test',key:'private-synthetic',org:'org_uav',fetch:async(url,options)=>{
+    assert.equal(options.redirect,'error');assert.equal(options.headers['X-Tiskz-Org'],'org_uav');
     const request=JSON.parse(options.body);
     return new Response('event: message\ndata: '+JSON.stringify({jsonrpc:'2.0',id:request.id,result:{content:[{type:'text',text:'[]'}]}})+'\n\n',{headers:{'Content-Type':'text/event-stream'}});
   }});
@@ -114,7 +114,7 @@ test('solicitudes vencidas no conservan audio y el fallo de almacenamiento no se
 test('cliente HTTP de evidencia usa la API sin MCP y conserva la clave en el servidor',async()=>{
  const {evidenceApiClient}=await import('../evidence.mjs');
  const seen=[];
- const client=evidenceApiClient({url:'https://panel.test/api/v1/audio-fragments',key:'synthetic-private',org:'org_vecinal',fetch:async(url,options)=>{
+ const client=evidenceApiClient({url:'https://panel.test/api/v1/audio-fragments',key:'synthetic-private',org:'org_uav',fetch:async(url,options)=>{
   seen.push({url:String(url),options});assert.equal(options.redirect,'error');
   return options.method==='POST'?Response.json({data:{id:'clip'}}):new Response('wave',{headers:{'Content-Type':'audio/wav'}});
  }});

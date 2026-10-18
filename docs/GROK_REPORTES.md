@@ -13,7 +13,7 @@ TISKZ_REPORTS_ENABLED=true
 TISKZ_REPORTS_SIMULATED=true
 TISKZ_API_URL=https://web-repo-xi.vercel.app/api/v1
 TISKZ_API_KEY=
-TISKZ_ORG_ID=org_vecinal
+TISKZ_ORG_ID=org_uav
 TISKZ_EVIDENCE_SIMULATED=true
 ```
 

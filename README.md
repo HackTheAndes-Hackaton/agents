@@ -86,7 +86,7 @@ Para recibir alertas de llamadas atendidas por un número de Vapi, consulta [lla
 
 La APK puede autorizar por separado `consentimiento_conservacion: true` al crear una sesión WebRTC. Con su ticket productor puede usar `POST /v1/sessions/{id}/evidence` (`request_id` UUID y `audio_base64` WAV), `GET` para listar y `GET /v1/sessions/{id}/evidence/{clip_id}` para reproducir. El ticket observador no puede acceder a estas rutas y al finalizar la sesión todos sus tickets vencen.
 
-Configura en el servidor `TISKZ_MCP_URL`, `TISKZ_API_KEY` y `TISKZ_ORG_ID=org_vecinal`. El MCP se implementa en el repositorio web, sobre Postgres, y debe desplegarse antes de probar el guardado. La clave de la API nunca llega al cliente. El backend fija organización, sesión, procedencia del micrófono y estimación provisional; no acepta nombres, números o puntuaciones inyectados en la carga del cliente.
+Configura en el servidor `TISKZ_MCP_URL`, `TISKZ_API_KEY` y `TISKZ_ORG_ID=org_uav`. El MCP se implementa en el repositorio web, sobre Postgres, y debe desplegarse antes de probar el guardado. La clave de la API nunca llega al cliente. El backend fija organización, sesión, procedencia del micrófono y estimación provisional; no acepta nombres, números o puntuaciones inyectados en la carga del cliente.
 
 Las herramientas son `guardar_fragmento`, `listar_fragmentos` y `escuchar_fragmento`. Conservar un WAV no crea una identidad ni un embedding. Esta primera conexión cubre el micrófono WebRTC; las alertas telefónicas de Vapi todavía no aportan audio original. SMS y corte remoto no se ejecutan por estas herramientas.
 

@@ -9,7 +9,7 @@ TISKZ_CASE_DELIVERY_ENABLED=true
 TISKZ_CASES_SIMULATED=true
 TISKZ_API_URL=https://web-repo-xi.vercel.app/api/v1
 TISKZ_API_KEY=
-TISKZ_ORG_ID=org_vecinal
+TISKZ_ORG_ID=org_uav
 ```
 
 La entrega está desactivada por defecto y solo admite el origen ficticio. La clave es de integración con el panel; xAI se configura en el servidor web, no en voz. Mantener `TISKZ_EVIDENCE_SIMULATED=true` si también se usan clips ficticios. No sustituir las demás variables de voz existentes.
