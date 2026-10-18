@@ -21,3 +21,7 @@ Marin usa `endCall` y la frase concreta «Voy a terminar la llamada». `endCallP
 Guardar WAV no genera una huella vocal. La API admite `/voice-samples` con embeddings y propone vínculos entre incidentes con modelo y versión compatibles, revisión y autorización de referencia. Aún falta un motor de embeddings real conectado a estos fragmentos. No se generan vectores ficticios ni se activa automáticamente `reference_enabled`. Esta versión permite conservar y escuchar evidencia para revisión; todavía no reconoce una voz al volver a llamar ni cuelga por similitud vocal.
 
 Validación: pruebas de órdenes de cierre, negaciones y hablantes; consentimiento, revocación, almacenamiento asíncrono y fallos; ventana acotada y filtro de resample; compilación, tests y lint Android. Prueba HTTP con tono sintético: subida, recuperación idéntica por SHA-256 y eliminación del incidente de prueba. La prueba de conferencia real requiere instalar la nueva APK.
+
+## Publicación durable en Maritime
+
+Tras `node scripts/preparar-runtime.mjs`, usar `python3 scripts/subir-runtime.py AGENT_ID` antes de importar el entorno del paquete y reiniciar. El script escribe un archivo temporal, hace fsync de archivo y directorio, sincroniza y verifica SHA-256. Una escritura confirmada solo en caché puede perderse al capturar/reiniciar la VM: se observó un paquete vacío tras un reinicio. No cambiar el hash del proceso si la subida durable falla. Comprobar después el hash en `/proc/1/environ` y la respuesta HTTP de `/health`; el estado `active` del panel no basta.
