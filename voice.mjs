@@ -6,6 +6,7 @@ import { detectAlert, parseThreshold } from './decisions.mjs';
 import { understandIncident } from './understanding.mjs';
 import { LiveCaptions, liveSessionConfig, liveAnalysisContext } from './live-voice.mjs';
 import { createPhoneBridge } from './phone-bridge.mjs';
+import { evidenceClient, evidenceRoutes } from './evidence.mjs';
 
 const token = () => randomBytes(24).toString('base64url');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -147,10 +148,12 @@ export async function createVoiceServer(config = {}) {
     if (!equal(appToken(req), room.producer)) throw statusError('Acceso no autorizado', 401);
     return room;
   }
+  const evidence = evidenceRoutes({authorizeRoom, body, mcp:config.evidenceMcp ?? evidenceClient()});
   const server = http.createServer(async (req, res) => {
     const send = (status, data) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(data)); };
     try {
       const url = new URL(req.url, 'http://localhost');
+      if (await evidence(req,res,url.pathname)) return;
       if (await phone.http(req, res, url.pathname)) return;
       if (req.method === 'GET' && url.pathname === '/health') return send(200, { ok: true, role: 'voz', webrtc: true, models: { transcription: 'gpt-live-transcribe', understanding: 'gpt-4.1-mini', detection: 'gpt-6-luna', assistant: 'gpt-live-1', voice: 'marin' }, configured: Boolean(apiKey) });
       const staticName = url.searchParams.get('asset') ?? (url.pathname === '/' ? 'index.html' : url.pathname.slice(1));
@@ -173,7 +176,7 @@ export async function createVoiceServer(config = {}) {
         if (input.mode === 'assistant' && input.consentimiento_voz_ia !== true) throw statusError('Se requiere autorización para conversar con voz de IA', 400);
         if (!apiKey) throw statusError('Falta acceso al modelo en el servidor', 503);
         if (rooms.size >= maxSessions) throw statusError('Hay sesiones activas; termina una antes de continuar', 429);
-        const room = { mode: input.mode ?? 'analysis', captions: new LiveCaptions(), delegations: new Set(), id: randomUUID(), producer: token(), observer: token(), clients: new Set(), transcripts: new Map(), turns: new Map(), revision: 0, detectRevision: 0, understandRevision: 0, closed: false, started: Date.now(), callId: null };
+        const room = { evidenceConsent:input.consentimiento_conservacion === true, mode: input.mode ?? 'analysis', captions: new LiveCaptions(), delegations: new Set(), id: randomUUID(), producer: token(), observer: token(), clients: new Set(), transcripts: new Map(), turns: new Map(), revision: 0, detectRevision: 0, understandRevision: 0, closed: false, started: Date.now(), callId: null };
         rooms.set(room.id, room);
         room.expiry = setTimeout(() => void endRoom(room, 'expired'), sessionMs).unref();
         return send(201, { session_id: room.id, producer_token: room.producer, observer_token: room.observer, expires_at: new Date(Date.now() + sessionMs).toISOString(), mode: room.mode, model: room.mode === 'assistant' ? 'gpt-live-1' : 'gpt-live-transcribe', voice: room.mode === 'assistant' ? 'marin' : null, events_path: `/ws/calls?session=${room.id}&ticket=${room.observer}` });

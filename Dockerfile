@@ -3,7 +3,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
-COPY server.mjs decisions.mjs understanding.mjs voice.mjs ./
+COPY server.mjs decisions.mjs understanding.mjs voice.mjs live-voice.mjs phone-bridge.mjs evidence.mjs ./
 COPY prompts ./prompts
 COPY web ./web
 ENV NODE_ENV=production DATA_DIR=/data
