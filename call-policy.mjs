@@ -1,5 +1,6 @@
 import { groundUnderstanding } from './understanding.mjs';
 import { segmentRisk } from './risk-segments.mjs';
+import { principalFraudType } from './fraud-taxonomy.mjs';
 
 const guidance = {
   observar: 'Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.',
@@ -67,7 +68,7 @@ export function assessmentEvents(target, transcript) {
   if (assessment.alerta !== null) {
     events.push({ type: 'risk.update', revision: target.revision,
       risk_percent: Math.round(target.detectResult.value.probabilidad * 100), alerta: assessment.alerta,
-      reasons: [assessment.motivo], scam_type: null, impersonating: null,
+      reasons: [assessment.motivo], scam_type: principalFraudType(assessment), impersonating: null,
       score_kind: 'probabilidad_de_alerta_no_calibrada' });
   }
   // "Observar" solo permite incorporarse después de revisar el texto disponible; no verifica identidades.

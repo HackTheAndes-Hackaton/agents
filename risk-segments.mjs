@@ -1,5 +1,6 @@
 // Clasifica conductas seleccionadas y ancladas; nunca busca jergas por regex.
 // No decide alertas, no autoriza cortes y no identifica a personas.
+import { fraudCategories } from './fraud-taxonomy.mjs';
 export function segmentRisk(evidence = [], alerted = false) {
   const byType = new Map();
   for (const e of evidence) {
@@ -10,7 +11,9 @@ export function segmentRisk(evidence = [], alerted = false) {
   const out = [];
   const add = (category, types, hypothesis = false) => {
     const quotes = types.flatMap(t => byType.get(t) ?? []);
-    if (quotes.length) out.push({ categoria: category, interpretacion: hypothesis ? 'hipotesis_preventiva' : 'conducta_por_revisar', evidencias: quotes });
+    const [etiqueta, fuentes, criterio] = fraudCategories[category];
+    if (quotes.length) out.push({ categoria: category, etiqueta, fuentes, criterio,
+      interpretacion: hypothesis ? 'hipotesis_preventiva' : 'conducta_por_revisar', evidencias: quotes });
   };
   if (has('amenaza')) {
     const coercion = alerted && has('peticion_pago', 'condicion');
