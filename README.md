@@ -1,5 +1,8 @@
 # Dos agentes contra estafas y extorsiones
 
+**Reportes automáticos de pruebas con Maritime o Grok:** [configuración, permisos y flujo](docs/GROK_REPORTES.md).
+La extracción y el resumen se elaboran al cerrar la sesión autorizada, sin sustituir la voz ni la detección existentes.
+
 Prototipo en español basado en el resumen de HackTheAndes:
 
 1. **andes-comprension** organiza citas literales de la transcripción autorizada y categorías para revisar, sin atribuir identidades ni hablantes.

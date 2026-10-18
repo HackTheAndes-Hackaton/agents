@@ -27,7 +27,7 @@ test('Voz: exige acceso y consentimiento, y sirve la interfaz sin credenciales',
   assert.equal((await f.post('/v1/sessions', {})).status, 400);
   const proxied = await fetch(f.base + '/v1/sessions', { method: 'POST', headers: { 'X-Voice-Token': code, 'Content-Type': 'application/json' }, body: JSON.stringify({ consentimiento_analisis: true }) });
   assert.equal(proxied.status, 201);
-  const html = await (await fetch(f.base)).text(); assert.ok(html.includes('Tiskz')); assert.ok(!html.includes(code));
+  const html = await (await fetch(f.base)).text(); assert.ok(html.includes('PhoneWard')); assert.ok(!html.includes(code));
 });
 
 test('Voz: observador no inyecta texto, sesiones aisladas y final duplicado no cobra de nuevo', async t => {
@@ -155,4 +155,31 @@ test('Live: exige consentimiento específico, negocia Marin y analiza solo a qui
   await new Promise(r=>setTimeout(r,30));assert.equal(transcripts.length,1);
   await f.post(`/v1/sessions/${room.session_id}/end`,{},room.producer_token);
   assert.equal(calls.at(-1).path,'/v1/live/sessions/live_opaque_ID/hangup');
+});
+
+test('Entrega WebRTC: datos al cerrar sin decisiones de reporte en el cliente ni voz del agente',async t=>{
+  const snapshots=[];
+  const caseDelivery={enabled:true,finish:async snapshot=>{snapshots.push(snapshot);return {status:'completed'};},drain:async()=>{}};
+  const f=await fixture(t,{caseDelivery,caseSimulated:true});
+  const room=await f.create();const p=await f.connect(room);
+  p.ws.send(JSON.stringify({type:'transcript.update',id:'caller',text:'Solicitud ficticia de 100 soles.',speaker:'caller',final:true}));
+  p.ws.send(JSON.stringify({type:'transcript.update',id:'agent',text:'Respuesta del agente que no se debe exportar.',speaker:'agent',final:true}));
+  await until(()=>p.events.filter(e=>e.type==='transcript.update').length===2);
+  await f.post(`/v1/sessions/${room.session_id}/end`,{},room.producer_token);
+  assert.equal(snapshots.length,1);assert.equal(snapshots[0].text,'Solicitud ficticia de 100 soles.');
+  assert.equal(snapshots[0].session_id,room.session_id);assert.equal(snapshots[0].simulated,true);
+  const other=await f.create({consentimiento_conservacion:true});
+  await f.post(`/v1/sessions/${other.session_id}/end`,{},other.producer_token);
+  assert.equal(snapshots.length,2);
+});
+
+test('Reportes WebRTC: una revisión de detección anterior no se exporta como estimación final',async t=>{
+  let release;const gate=new Promise(resolve=>{release=resolve;});
+  const snapshots=[];
+  const f=await fixture(t,{caseDelivery:{enabled:true,finish:async snapshot=>snapshots.push(snapshot),drain:async()=>{}},detect:async()=>{await gate;return {alerta:true,probabilidad:.9};}});
+  const room=await f.create();const p=await f.connect(room);
+  p.ws.send(JSON.stringify({type:'transcript.update',id:'waiting',text:'Contexto ficticio pendiente.',final:true}));
+  await until(()=>p.events.some(e=>e.type==='transcript.update'));
+  await f.post(`/v1/sessions/${room.session_id}/end`,{},room.producer_token);release();
+  assert.equal(snapshots[0].decision,null);
 });

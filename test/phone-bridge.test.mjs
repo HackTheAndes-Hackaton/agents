@@ -490,3 +490,17 @@ test('confirmación tardía del proveedor corrige el estado de corte tras cerrar
   const response = await fetch(f.base + '/v1/phone/diagnostics', { headers: { 'X-Voice-Token': code } });
   assert.equal((await response.json()).lastCall.hangup_status, 'confirmed');
 });
+
+test('Entrega Vapi: la web recibe el contexto humano al cerrar sin permisos de reporte en el monitor',async t=>{
+ const snapshots=[];
+ const f=await fixture(t,{caseDelivery:{enabled:true,finish:async snapshot=>snapshots.push(snapshot)},caseSimulated:true});
+ const reply=await fetch(f.base+'/v1/phone/monitor',{method:'POST',headers:{'X-Voice-Token':code,'Content-Type':'application/json'},body:JSON.stringify({consentimiento_analisis:true})});
+ const {ticket}=await reply.json();
+ const ws=new WebSocket(f.base.replace('http:','ws:')+'/ws/phone?ticket='+ticket);
+ await once(ws,'open');
+ await f.post(conversation('Solicitud ficticia por verificar.'));
+ await f.post({type:'status-update',status:'ended',call:{id,assistantId}});
+ assert.equal(snapshots.length,1);assert.equal(snapshots[0].session_id,id);assert.equal(snapshots[0].channel,'telefono_vapi');
+ assert.equal(snapshots[0].text,'Solicitud ficticia por verificar.');assert.equal(snapshots[0].simulated,true);
+ ws.close();
+});

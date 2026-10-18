@@ -2,7 +2,7 @@
 import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
 import { brotliCompressSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
-import { transformSync } from 'esbuild';
+import { buildSync, transformSync } from 'esbuild';
 const files = {};
 async function collect(path) {
   const entries = await readdir(path, { withFileTypes: true });
@@ -13,8 +13,11 @@ async function collect(path) {
     else if (e.isFile()) files[name] = (await readFile(name)).toString('utf8');
   }
 }
-for (const path of ['voice.mjs', 'live-voice.mjs', 'live-phone-mcp.mjs', 'phone-bridge.mjs', 'phone-evidence.mjs', 'scribe-sidecar.mjs', 'call-policy.mjs', 'risk-segments.mjs', 'evidence.mjs', 'decisions.mjs', 'understanding.mjs', 'package.json']) files[path] = (await readFile(path)).toString('utf8');
-for (const path of ['prompts', 'web', 'node_modules/ws']) await collect(path);
+// Un solo módulo evita incluir dos árboles completos de dependencias en el env.
+files['voice.mjs'] = buildSync({ entryPoints:['voice.mjs'],bundle:true,write:false,format:'esm',platform:'node',target:'node24',minify:true,
+  external:['bufferutil','utf-8-validate'],banner:{js:"import{createRequire as runtimeRequire}from'node:module';const require=runtimeRequire(import.meta.url);"},
+}).outputFiles[0].text;
+for (const path of ['prompts', 'web']) await collect(path);
 // Mantiene el arranque bajo el límite de env de la VM sin eliminar validaciones.
 for (const name of Object.keys(files)) if (/\.m?js$/.test(name)) files[name] = transformSync(files[name], { minify: true, legalComments: 'inline', target: 'es2022' }).code;
 const packed = brotliCompressSync(Buffer.from(JSON.stringify(files)));
