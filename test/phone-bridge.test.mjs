@@ -307,7 +307,7 @@ test('diagnóstico conserva solo metadatos de estado y corte para revisar la úl
  assert.equal(d.lastCall.assessment_state, 'alertar');
  assert.equal(d.lastCall.hangup_requested, true);
  assert.equal(d.lastCall.hangup_revision, 1);
- assert.equal(d.lastCall.hangup_status, 'requested');
+ assert.equal(d.lastCall.hangup_status, 'confirmed');
  assert.equal(d.lastCall.end_reason, 'provider_ended');
  assert.equal(d.lastCall.alerta, true);
  assert.equal(typeof d.lastCall.detection_ms, 'number');
