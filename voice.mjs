@@ -5,6 +5,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { detectAlert, parseThreshold } from './decisions.mjs';
 import { understandIncident } from './understanding.mjs';
 import { LiveCaptions, liveSessionConfig, liveAnalysisContext } from './live-voice.mjs';
+import { currentAssessment } from './call-policy.mjs';
 import { createPhoneBridge } from './phone-bridge.mjs';
 import { evidenceClient, evidenceApiClient, evidenceRoutes, captureControl } from './evidence.mjs';
 
@@ -31,6 +32,7 @@ export async function createVoiceServer(config = {}) {
     const payload = { ...event, session_id: room.id, timestamp: new Date().toISOString() };
     if (event.type === 'transcript.update' && event.id) room.transcripts.set(event.id, payload);
     if (event.type === 'risk.update') room.lastRisk = payload;
+    if (event.type === 'assessment.update') room.lastAssessment = payload;
     for (const client of room.clients) if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(payload));
   };
   const emitProducer = (room,event) => {
@@ -68,6 +70,7 @@ export async function createVoiceServer(config = {}) {
         const revision = room.revision;
         const transcripcion = room.mode === 'assistant' ? room.captions.text('caller') : [...room.turns.values()].sort((a, b) => a.sequence - b.sequence).map(t => t.text).join('\n').slice(-12000);
         room[processed] = revision;
+        room.assessmentText = transcripcion;
         const incident = { consentimiento_analisis: true, transcripcion };
         if (component === 'detect') emit(room, { type: 'agent.status', status: 'analyzing' });
         try {
@@ -87,6 +90,10 @@ export async function createVoiceServer(config = {}) {
         } catch {
           if (!room.closed && revision === room.revision) room[`${component}Result`] = { revision, error: true };
           if (!room.closed && revision === room.revision) emit(room, { type: 'error', message: component === 'detect' ? 'Detección no disponible. No interpretes este fallo como ausencia de riesgo.' : 'Comprensión no disponible; la detección se procesa de forma independiente.', component: component === 'detect' ? 'deteccion' : 'comprension' });
+        }
+        if (!room.closed && revision === room.revision) {
+          const assessment = currentAssessment(room, transcripcion);
+          if (assessment) emit(room, { type: 'assessment.update', revision, assessment });
         }
         if (room.mode === 'assistant' && !room.closed && revision === room.revision && room.detectResult?.revision === revision && room.understandResult?.revision === revision) deliverLiveContext(room);
       }
@@ -245,6 +252,7 @@ export async function createVoiceServer(config = {}) {
       client.send(JSON.stringify({ type: 'session.ready', session_id: room.id, producer, expires_at: new Date(room.started + sessionMs).toISOString() }));
       for (const event of room.transcripts.values()) client.send(JSON.stringify(event));
       if (room.lastRisk) client.send(JSON.stringify(room.lastRisk));
+      if (room.lastAssessment?.revision === room.revision) client.send(JSON.stringify(room.lastAssessment));
       if (producer) capture.replay(room,client);
       client.on('message', async raw => {
         let event; try { event = JSON.parse(raw.toString()); } catch { return; }

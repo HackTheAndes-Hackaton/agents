@@ -93,11 +93,12 @@ if (typeof document !== 'undefined') {
       transcripts.set(event.id, event); $('transcripts').replaceChildren(...[...transcripts.values()].map(e => { const p = document.createElement('p'); p.textContent = e.text; p.className = e.final ? '' : 'partial'; return p; }));
     }
     if (event.type === 'alert.updated') { $('alert').textContent = event.alerta ? 'TRUE · Revisar posible riesgo' : 'FALSE · Sin alerta en este fragmento'; $('alert').className = event.alerta ? 'warning' : 'clear'; $('reason').textContent = `Decisión provisional · umbral ${event.threshold}. No confirma una estafa ni garantiza seguridad.`; }
+    if (event.type === 'assessment.update') $('assessment').textContent = `${event.assessment.estado.toUpperCase()}: ${event.assessment.orientacion}`;
     if (event.type === 'understanding.update') $('understanding').textContent = JSON.stringify(event.analysis, null, 2);
   };
   async function start(file) {
     if (!$('consent').checked || !$('code').value) return notice('Introduce el código y confirma la autorización de análisis.');
-    $('start').disabled = true; $('play').disabled = true; $('connection').textContent = 'Conectando…'; transcripts.clear(); $('transcripts').replaceChildren(); $('understanding').textContent = 'Esperando análisis…'; $('alert').textContent = 'Esperando audio';
+    $('start').disabled = true; $('play').disabled = true; $('connection').textContent = 'Conectando…'; transcripts.clear(); $('transcripts').replaceChildren(); $('understanding').textContent = 'Esperando análisis…'; $('assessment').textContent = 'Esperando orientación.'; $('alert').textContent = 'Esperando audio';
     let stream, source;
     try {
       if (file) {

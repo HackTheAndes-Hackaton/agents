@@ -91,3 +91,9 @@ Las nuevas APK anuncian `audio_capture_protocol: 1` al crear una sesión con con
 La APK responde `audio.capture_received`, toma los últimos segundos disponibles al recibir la orden y sube WAV usando ese `request_id`. No equivale a localizar exactamente la frase que originó el análisis. Si no hay audio o está ocupada responde `audio.capture_failed`. El servidor emite `audio.capture_result` (`saved` y `fragment_id`, o `failed` y motivo) después de consultar el almacenamiento. El cliente no puede confirmar por sí mismo que quedó guardado. Las órdenes vencidas no se ejecutan; un reintento de subida conserva su ID y la puntuación de la detección que lo originó.
 
 Con `TISKZ_AUDIO_API_URL=https://web-repo-xi.vercel.app/api/v1/audio-fragments` el backend usa la API HTTP directamente. Sin esa configuración mantiene compatibilidad con MCP. Ambas entradas comparten el mismo servicio de persistencia en el panel. La clave global nunca se distribuye a la APK. Para estas pruebas `TISKZ_EVIDENCE_SIMULATED=true` separa la evidencia de las llamadas reales.
+
+## Evaluación incremental y orientación basada en evidencia
+
+La [aplicación práctica de los estudios](docs/INVESTIGACION_APLICADA.md) incluye 20 conversaciones sintéticas en español, un evaluador por turno y la política `observar / verificar / alertar / inconcluso`. `assessment.update` reúne resultados de la misma revisión y citas literales. La web muestra la orientación y GPT-Live recibe pautas redactadas por el servidor. La telefonía Vapi emite el evento para sus clientes; dibujarlo en Android requiere integrar ese nuevo tipo de evento.
+
+Ejecuta `npm test` sin créditos o `node scripts/evaluar-fraude.mjs eval/results/nueva-ejecucion.json` con el proveedor configurado para medir los modelos. Los resultados de desarrollo no demuestran precisión en llamadas reales. El canal acústico permanece explícitamente `no_evaluada`; no se deduce voz sintética ni identidad a partir de una transcripción.

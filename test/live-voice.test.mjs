@@ -27,3 +27,12 @@ test('Live: contexto no confunde análisis pendiente o fallido con FALSE', () =>
   assert.equal(JSON.parse(liveAnalysisContext(room)).alerta, false);
   const config=liveSessionConfig();assert.equal(config.audio.output.voice,'marin');assert.equal(config.store,false);assert.equal(config.delegation.type,'client');
 });
+
+test('Live entrega orientación comprobable al agente, sin inferir voz sintética del texto', () => {
+  const room = { revision: 3, assessmentText: 'Necesito dinero.', detectResult: { revision: 3, value: { alerta: false, probabilidad: .1 } }, understandResult: { revision: 3, value: { rol: 'comprension', evidencias: [{ tipo: 'peticion_pago', cita: 'Necesito dinero.' }] } } };
+  const context = JSON.parse(liveAnalysisContext(room));
+  assert.equal(context.orientacion.estado, 'verificar');
+  assert.equal(context.orientacion.voz_sintetica.estado, 'no_evaluada');
+  assert.deepEqual(context.orientacion.identidades_verificadas, []);
+  assert.equal(context.orientacion.evidencia_textual, undefined);
+});

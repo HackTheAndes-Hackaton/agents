@@ -1,0 +1,228 @@
+{
+  "version": "es-PE-v1",
+  "origin": "Casos sintéticos originales para desarrollo, no llamadas reales ni muestras copiadas de los papers. Etiquetas propuestas sin validación experta; no es un test independiente.",
+  "cases": [
+    {
+      "id": "c01",
+      "pair_id": "p01",
+      "scenario": "banco",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamo del banco por un cargo que aparece en su cuenta.",
+        "No me dé claves ni códigos. Cuelgue y revise la aplicación oficial o llame al número que ya tiene en su tarjeta."
+      ]
+    },
+    {
+      "id": "c02",
+      "pair_id": "p01",
+      "scenario": "banco",
+      "label": true,
+      "alert_from_turn": 2,
+      "turns": [
+        "Le llamo del banco por un cargo que aparece en su cuenta.",
+        "Para bloquear ese cargo necesito que me lea la contraseña y el código de autenticación que acaba de recibir por SMS."
+      ]
+    },
+    {
+      "id": "c03",
+      "pair_id": "p02",
+      "scenario": "familiar",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Tengo una emergencia con mi mascota y necesito dinero.",
+        "Puedes llamarme al número que ya conoces y verificar con la veterinaria. Espero mientras compruebas antes de decidir."
+      ]
+    },
+    {
+      "id": "c04",
+      "pair_id": "p02",
+      "scenario": "familiar",
+      "label": true,
+      "alert_from_turn": 2,
+      "turns": [
+        "Tengo una emergencia con mi mascota y necesito dinero.",
+        "Yapéame ahora mismo. No le cuentes a nadie y no llames al número que conoces para verificar, hazlo ya."
+      ]
+    },
+    {
+      "id": "c05",
+      "pair_id": "p03",
+      "scenario": "devolucion",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le contacto por una devolución relacionada con su compra.",
+        "Compruebe la devolución entrando por su cuenta en la tienda oficial. No haga ningún depósito ni comparta códigos."
+      ]
+    },
+    {
+      "id": "c06",
+      "pair_id": "p03",
+      "scenario": "devolucion",
+      "label": true,
+      "alert_from_turn": 2,
+      "turns": [
+        "Le contacto por una devolución relacionada con su compra.",
+        "Transfiera ahora el adelanto a esta cuenta para recuperar su dinero. No hable con la tienda ni verifique con nadie."
+      ]
+    },
+    {
+      "id": "c07",
+      "pair_id": "p04",
+      "scenario": "tributos",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamo por una notificación relacionada con sus tributos.",
+        "Consulte por su cuenta el buzón oficial de SUNAT. No recibimos pagos ni claves por esta llamada."
+      ]
+    },
+    {
+      "id": "c08",
+      "pair_id": "p04",
+      "scenario": "tributos",
+      "label": true,
+      "alert_from_turn": 2,
+      "turns": [
+        "Le llamo por una notificación relacionada con sus tributos.",
+        "Si no transfiere quinientos soles a mi cuenta ahora, voy a hacerle daño a su familia."
+      ]
+    },
+    {
+      "id": "c09",
+      "pair_id": "p05",
+      "scenario": "soporte",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Estoy llamando por el problema de soporte de su equipo.",
+        "Puede consultar el ticket en el sitio que usted ya conoce. No instale nada ni me dé control remoto desde esta llamada."
+      ]
+    },
+    {
+      "id": "c10",
+      "pair_id": "p05",
+      "scenario": "soporte",
+      "label": true,
+      "alert_from_turn": 2,
+      "turns": [
+        "Estoy llamando por el problema de soporte de su equipo.",
+        "Instale la aplicación de control remoto y abra su banco. Transfiera ahora lo que le indique y no consulte con nadie."
+      ]
+    },
+    {
+      "id": "c11",
+      "pair_id": "p06",
+      "scenario": "entrega",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamo para coordinar la entrega de un paquete.",
+        "Solo quería confirmar si puede recibirlo mañana por la tarde. No necesito pagos ni datos bancarios."
+      ]
+    },
+    {
+      "id": "c12",
+      "pair_id": "p06",
+      "scenario": "entrega",
+      "label": true,
+      "alert_from_turn": 2,
+      "turns": [
+        "Le llamo para coordinar la entrega de un paquete.",
+        "Soy del banco que valida el envío. Dígame la contraseña de su banca y el código de autenticación para desbloquearlo."
+      ]
+    },
+    {
+      "id": "c13",
+      "pair_id": "p07",
+      "scenario": "cobranza",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Le llamo por una deuda pendiente de pago.",
+        "Revise primero su contrato y consulte con la empresa usando el contacto que ya conoce. Puede verificar antes de pagar."
+      ]
+    },
+    {
+      "id": "c14",
+      "pair_id": "p07",
+      "scenario": "cobranza",
+      "label": true,
+      "alert_from_turn": 2,
+      "turns": [
+        "Le llamo por una deuda pendiente de pago.",
+        "Deposite ahora o voy a lastimar a su familia. No corte ni pida ayuda."
+      ]
+    },
+    {
+      "id": "c15",
+      "pair_id": "p08",
+      "scenario": "yape",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Te hablo por el dinero del almuerzo que coordinamos.",
+        "Son veinte soles, sin apuro. Verifica conmigo por el contacto habitual antes de hacer el Yape."
+      ]
+    },
+    {
+      "id": "c16",
+      "pair_id": "p08",
+      "scenario": "yape",
+      "label": true,
+      "alert_from_turn": 2,
+      "turns": [
+        "Te hablo por el dinero del almuerzo que coordinamos.",
+        "Haz el Yape a esta cuenta ahora. No me llames a mi otro número para verificar ni le digas a nadie."
+      ]
+    },
+    {
+      "id": "c17",
+      "pair_id": null,
+      "scenario": "amenaza_citada",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Hoy vi una noticia sobre extorsiones.",
+        "La noticia cita esta amenaza: deposita ahora o lastimamos a tu familia. Es un ejemplo de lo que hay que reportar, no te estoy pidiendo dinero."
+      ]
+    },
+    {
+      "id": "c18",
+      "pair_id": null,
+      "scenario": "voz_ia_legitima",
+      "label": false,
+      "alert_from_turn": null,
+      "turns": [
+        "Soy una voz automatizada que recuerda citas.",
+        "Su cita es mañana a las diez. No necesito pagos ni datos. Verifíquelo en el canal habitual de su centro."
+      ]
+    },
+    {
+      "id": "c19",
+      "pair_id": null,
+      "scenario": "asr_ambiguo",
+      "label": null,
+      "alert_from_turn": null,
+      "turns": [
+        "No se escucha bien.",
+        "Necesito que gane el [inaudible] en comisiones, tengo que conseguir ahorita."
+      ],
+      "note": "Texto corrupto ficticio: no reconstruir palabras ni asignar una etiqueta segura."
+    },
+    {
+      "id": "c20",
+      "pair_id": null,
+      "scenario": "solo_dinero",
+      "label": null,
+      "alert_from_turn": null,
+      "turns": [
+        "Hola, necesito hablar contigo.",
+        "Necesito dinero."
+      ],
+      "note": "Pedir dinero no demuestra fraude ni legitimidad: pedir contexto."
+    }
+  ]
+}

@@ -32,6 +32,25 @@ async function fixture(t, overrides = {}) {
 const conversation = (text, timestamp = 1, callId = id) => ({ type: 'conversation-update', timestamp, call: { id: callId, assistantId }, messages: [{ role: 'assistant', message: 'Soy un asistente virtual.' }, { role: 'user', message: text }] });
 async function until(predicate) { for (let i = 0; i < 100; i++) { if (predicate()) return; await delay(10); } assert.fail('No llegó el evento esperado'); }
 
+test('orientación telefónica espera ambos agentes y entrega citas actuales sin ordenar corte', async t => {
+  let release;
+  const gate = new Promise(r => { release = r; });
+  const f = await fixture(t, { detect: async () => ({ alerta: false, probabilidad: .1 }),
+    understand: async incident => { await gate; return { rol: 'comprension', evidencias: [{ tipo: 'peticion_pago', cita: incident.transcripcion }] }; } });
+  await f.connect(true);
+  await f.post(conversation('Necesito dinero.'));
+  await until(() => f.events.some(e => e.type === 'alert.updated'));
+  assert.equal(f.events.some(e => e.type === 'assessment.update'), false);
+  release();
+  await until(() => f.events.some(e => e.type === 'assessment.update'));
+  const e = f.events.find(e => e.type === 'assessment.update');
+  assert.equal(e.session_id, id);
+  assert.equal(e.revision, 1);
+  assert.equal(e.assessment.estado, 'verificar');
+  assert.equal(e.assessment.evidencia_textual[0].cita, 'Necesito dinero.');
+  assert.equal(f.events.some(e => e.type === 'call.hangup_requested'), false);
+});
+
 test('rechaza webhooks falsos y no analiza sin pantalla autorizada', async t => {
   const f = await fixture(t);
   assert.equal((await f.post(conversation('Ejemplo.'), 'wrong')).status, 401);

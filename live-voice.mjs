@@ -1,3 +1,4 @@
+import { currentAssessment } from './call-policy.mjs';
 // GPT-Live entrega deltas, no turnos finales. Conserva las palabras exactamente.
 export class LiveCaptions {
   constructor() { this.events = new Map(); this.length = 0; this.sequence = 0; }
@@ -29,5 +30,10 @@ export function liveSessionConfig() {
 export function liveAnalysisContext(room) {
   const current = room.detectResult?.revision === room.revision && room.understandResult?.revision === room.revision;
   if (!current) return JSON.stringify({ estado: 'analisis_pendiente', provisional: true, instruccion: 'Escucha o pide aclaración. No inventes un resultado.' });
-  return JSON.stringify({ estado: room.detectResult.error || room.understandResult.error ? 'analisis_parcial_o_no_disponible' : 'analizado', provisional: true, revision: room.revision, alerta: room.detectResult.error ? null : room.detectResult.value.alerta, resumen: room.understandResult.error ? null : room.understandResult.value.resumen?.slice(0,1000), identidades_verificadas: [] });
+  const assessment = currentAssessment(room, room.assessmentText ?? '');
+  // Al contexto de control solo llega prosa del servidor, nunca citas no confiables.
+  const orientacion = { estado: assessment.estado, orientacion: assessment.orientacion,
+    fragmento_inaudible_marcado: assessment.fragmento_inaudible_marcado,
+    voz_sintetica: assessment.voz_sintetica, identidades_verificadas: [] };
+  return JSON.stringify({ estado: room.detectResult.error || room.understandResult.error ? 'analisis_parcial_o_no_disponible' : 'analizado', provisional: true, revision: room.revision, orientacion, alerta: room.detectResult.error ? null : room.detectResult.value.alerta, resumen: room.understandResult.error ? null : room.understandResult.value.resumen?.slice(0,1000), identidades_verificadas: [] });
 }

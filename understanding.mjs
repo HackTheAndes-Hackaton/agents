@@ -30,6 +30,13 @@ export async function understandIncident(incident, options) {
 
 // Solo se publica texto literal o redactado por el servidor; nunca prosa libre del modelo.
 const kinds = {
+  peticion_pago: ['peticiones de pago', 'Petición económica seleccionada; por sí sola no demuestra fraude.'],
+  peticion_credenciales: ['peticiones de claves o códigos', 'Petición de credenciales seleccionada; revisar su contexto sin reproducir secretos adicionales.'],
+  acceso_remoto: ['peticiones de acceso remoto', 'Petición de acceso seleccionada; no prueba que se haya concedido acceso.'],
+  autoridad_alegada: ['autoridad alegada', 'Una entidad o cargo mencionado no verifica una identidad.'],
+  presion: ['presión temporal', 'Expresión de urgencia seleccionada; por sí sola no demuestra fraude.'],
+  aislamiento: ['restricciones a verificar', 'Expresión seleccionada sobre secreto o impedimento de verificación independiente.'],
+  verificacion_independiente: ['posibilidad de verificar', 'Se menciona verificación independiente; no confirma que se haya realizado.'],
   solicitud: ['peticiones', 'Fragmento seleccionado sobre una petición; no identifica a su autor ni destinatario.'],
   condicion: ['condiciones', 'Fragmento seleccionado sobre una condición; debe revisarse en su contexto.'],
   amenaza: ['posibles amenazas', 'Expresión seleccionada para revisar una posible amenaza; no confirma un delito.'],
@@ -57,7 +64,7 @@ export function groundUnderstanding(raw, transcript) {
     estado: evidencias.length ? 'analizado' : 'informacion_insuficiente',
     resumen: topics.length ? `Fragmentos seleccionados para revisar: ${topics.join(', ')}. Las citas conservan el texto recibido; no se atribuyen identidades ni hablantes.` : 'No hay citas suficientes para organizar el texto; no se atribuyen identidades ni hablantes.',
     participantes_mencionados: [],
-    solicitudes: evidencias.filter(e => e.tipo === 'solicitud').map(e => ({ cita: e.cita, destinatario: 'no determinado' })),
+    solicitudes: evidencias.filter(e => ['solicitud', 'peticion_pago', 'peticion_credenciales', 'acceso_remoto'].includes(e.tipo)).map(e => ({ cita: e.cita, destinatario: 'no determinado' })),
     datos_observados: evidencias.map(e => e.cita), evidencias,
     incertidumbres: ['No se determina quién habla ni quién recibe una petición o amenaza.', 'Las palabras dudosas deben contrastarse con el audio; no se reconstruyen a partir de suposiciones.'],
     limitaciones: ['Identidades no verificadas ni atribuidas.', 'Posibles errores de transcripción; una cita literal no confirma que el audio diga lo mismo.'],
