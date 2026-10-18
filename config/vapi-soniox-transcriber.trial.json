@@ -1,0 +1,11 @@
+{
+  "transcriber": {
+    "provider": "soniox",
+    "model": "stt-rt-v5",
+    "languages": ["es"],
+    "languageHintsStrict": true,
+    "maxEndpointDelayMs": 700,
+    "endpointLatencyAdjustmentLevel": 0,
+    "endpointSensitivity": 0
+  }
+}

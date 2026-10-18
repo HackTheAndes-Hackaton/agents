@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-18",
+  "profile": {
+    "stt": "scribe_realtime",
+    "llm": "gpt-4.1-mini",
+    "tts": "eleven_flash_v2_5",
+    "voice": "Sarah",
+    "turn": "eager + speculative"
+  },
+  "measurement": "end_of_synthetic_speech_to_first_audible_pcm_arrival",
+  "input": "macOS Paulina; mono PCM16 16000 Hz, paced",
+  "target_comparison": "strictly less than 1500 ms",
+  "synthetic_only": true,
+  "distinct_phrases": 3,
+  "repetitions": 2,
+  "summary": {
+    "turns": 6,
+    "measured": 6,
+    "target_ms": 1500,
+    "target_met": 6,
+    "median_ms": 1421,
+    "p95_ms": 1456,
+    "all_within_target": true,
+    "missing_or_interrupted": 0
+  },
+  "turns": [
+    {
+      "round": "gpt-mini",
+      "case_id": "reunion-negacion",
+      "completed": true,
+      "reply_audio_ms": 1313,
+      "target_met": true,
+      "interrupted_input": false,
+      "transcript_ms": 1229
+    },
+    {
+      "round": "gpt-mini",
+      "case_id": "amenaza-directa",
+      "completed": true,
+      "reply_audio_ms": 1452,
+      "target_met": true,
+      "interrupted_input": false,
+      "transcript_ms": 1176
+    },
+    {
+      "round": "gpt-mini",
+      "case_id": "correccion-importe",
+      "completed": true,
+      "reply_audio_ms": 1390,
+      "target_met": true,
+      "interrupted_input": false,
+      "transcript_ms": 1187
+    },
+    {
+      "round": "gpt-mini-repeat",
+      "case_id": "reunion-negacion",
+      "completed": true,
+      "reply_audio_ms": 1451,
+      "target_met": true,
+      "interrupted_input": false,
+      "transcript_ms": 1296
+    },
+    {
+      "round": "gpt-mini-repeat",
+      "case_id": "amenaza-directa",
+      "completed": true,
+      "reply_audio_ms": 1421,
+      "target_met": true,
+      "interrupted_input": false,
+      "transcript_ms": 1201
+    },
+    {
+      "round": "gpt-mini-repeat",
+      "case_id": "correccion-importe",
+      "completed": true,
+      "reply_audio_ms": 1456,
+      "target_met": true,
+      "interrupted_input": false,
+      "transcript_ms": 1252
+    }
+  ],
+  "limitations": [
+    "No incluye reproducción ni búfer del celular.",
+    "No valida la ruta telefónica PSTN ni el tiempo de unir conferencia.",
+    "No valida alertas, porcentajes ni corte de la APK.",
+    "Se preservaron negaciones y correcciones de cantidades en estas muestras; no es una medida general de precisión.",
+    "La respuesta a la amenaza de la primera ronda incluyó una pregunta innecesaria; falta validar el comportamiento completo de protección."
+  ],
+  "regression_tests": {
+    "passed": 109,
+    "failed": 0
+  }
+}

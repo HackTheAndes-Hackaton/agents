@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-18",
+  "provider": "soniox",
+  "model": "stt-rt-v5",
+  "language": "es",
+  "conditions": {
+    "krisp": true,
+    "fourier": false,
+    "custom_vocabulary": false,
+    "confidence_filter": false,
+    "pstn_tested": false
+  },
+  "cases": [
+    {
+      "case": "negacion",
+      "synthetic_only": true,
+      "reference": "No necesito dinero ni códigos. Solo quiero coordinar una reunión mañana a las cinco de la tarde.",
+      "transcript": "No necesito dinero ni códigos.\nSolo quiero coordinar una reunión mañana a las 5 de la tarde.",
+      "review": "Conserva las dos negaciones y la hora."
+    },
+    {
+      "case": "relato",
+      "synthetic_only": true,
+      "reference": "Ayer me dijeron que mi familia estaba secuestrada. Era una grabación. No te estoy amenazando ni pidiendo dinero.",
+      "transcript": "Ayer me dijeron que mi familia estaba secuestrada. Era una grabación. No te estoy amenazando ni pidiendo dinero.",
+      "review": "Conserva el relato de terceros y la negación de amenaza y petición."
+    },
+    {
+      "case": "cantidad",
+      "synthetic_only": true,
+      "reference": "Necesito que me devuelvas cincuenta soles por Yape. No son quinientos, son cincuenta.",
+      "transcript": "Necesito que me devuelvas 50 soles porque no son.\n500, son 50.",
+      "review": "Conserva la corrección 500 a 50; confunde Yape y divide mal la puntuación."
+    }
+  ],
+  "limitations": [
+    "Tres ejemplos sintéticos y una grabación autorizada no miden precisión general.",
+    "No valida el objetivo de latencia menor a 1500 ms.",
+    "La referencia real y sus transcripciones permanecen fuera de Git."
+  ],
+  "integration": {
+    "normal": {
+      "synthetic_only": true,
+      "pstn_tested": false,
+      "sample_rate": 8000,
+      "reply_audio_ms": 1673,
+      "alert_after_speech_ms": 1889,
+      "alerta": false,
+      "caller_captions": 1,
+      "agent_captions": 3,
+      "ready_to_answer": true,
+      "hangup_requested": false,
+      "states": [
+        "observar"
+      ],
+      "provider_status": "ended",
+      "error": null
+    },
+    "risk": {
+      "synthetic_only": true,
+      "pstn_tested": false,
+      "sample_rate": 8000,
+      "reply_audio_ms": 1855,
+      "alert_after_speech_ms": 2496,
+      "alerta": true,
+      "caller_captions": 1,
+      "agent_captions": 3,
+      "ready_to_answer": false,
+      "hangup_requested": true,
+      "states": [
+        "alertar",
+        "alertar"
+      ],
+      "provider_status": "ended",
+      "error": null,
+      "backend_hangup_status": "confirmed",
+      "android_conference_legs_tested": false
+    }
+  }
+}

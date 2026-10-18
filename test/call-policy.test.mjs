@@ -18,6 +18,23 @@ test('negaciones y advertencias citadas no se convierten en peticiones por palab
   assert.equal(assess('No necesito claves ni pagos.', 'negacion').estado, 'observar');
   assert.equal(assess('La noticia dice que el estafador exigió dinero.', 'contexto').estado, 'observar');
 });
+
+test('peticiones cotidianas no fuerzan verificación; una petición sin clasificar pide aclaración', () => {
+  const result = assess('Llamo como particular para coordinar una reunión mañana.', 'solicitud_cotidiana');
+  assert.equal(result.estado, 'observar'); assert.equal(result.alerta, false);
+  assert.equal(assess('Necesito que hagas una cosa.', 'solicitud').estado, 'inconcluso');
+  for (const tipo of ['peticion_pago', 'peticion_credenciales', 'acceso_remoto', 'presion', 'aislamiento', 'amenaza', 'autoridad_alegada']) {
+    assert.equal(assess('Fragmento sensible ficticio para probar la política.', tipo).estado, 'verificar');
+  }
+});
+
+test('saludar o presentar un nombre no basta; relatar una amenaza no convierte a quien habla en agresor', () => {
+  assert.equal(assess('Hola.', 'saludo').estado, 'inconcluso');
+  assert.equal(assess('Soy Persona de Prueba.', 'presentacion').estado, 'inconcluso');
+  const result = assess('Me llamaron para amenazarme, necesito ayuda.', 'relato_amenaza');
+  assert.equal(result.estado, 'observar'); assert.equal(result.acciones_automaticas, false);
+  assert.deepEqual(result.identidades_verificadas, []);
+});
 test('un fallo o cita reconstruida obliga a abstenerse, sin ocultar una alerta independiente', () => {
   assert.equal(assess('No se entiende la petición.', 'ambiguo').estado, 'inconcluso');
   assert.equal(assess('Hola.', 'contexto', null).estado, 'inconcluso');

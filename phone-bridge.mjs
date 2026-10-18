@@ -44,14 +44,12 @@ export function createPhoneBridge(config) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 1024, perMessageDeflate: false });
   const enabled = Boolean(config.secret?.length >= 24 && config.assistantId);
   let call = null, lastCall = null;
-  const liveFichaComplete = target => ['nombre', 'entidad', 'motivo', 'peticion'].every(key => target.liveFicha?.[key]?.trim().length >= 3 && target.text.includes(target.liveFicha[key])) && new Set(Object.values(target.liveFicha ?? {})).size === 4;
   function liveState(id) {
     if (!call || call.id !== id || call.closed) return { status: 'ended', revision: null, identity_verified: false };
     const assessment = currentAssessment(call, call.text);
     return { status: assessment ? 'current' : 'pending', revision: call.revision,
       assessment: assessment ? { estado: assessment.estado, orientacion: assessment.orientacion, motivo: assessment.motivo, alerta: assessment.alerta } : null,
-      missing_fields: ['nombre', 'entidad', 'motivo', 'peticion'].filter(key => !call.liveFicha?.[key]),
-      ready_to_answer: Boolean(assessment?.estado === 'observar' && assessment.alerta === false && liveFichaComplete(call)),
+      ready_to_answer: Boolean(assessment?.estado === 'observar' && assessment.alerta === false),
       identity_verified: false, transcript_source: 'live_reasoner_report_not_audio_verified',
       audio_evidence: 'unavailable_in_vapi_live', hangup_status: call.hangupStatus ?? null };
   }
@@ -67,9 +65,10 @@ export function createPhoneBridge(config) {
     evaluate: async (id, args) => {
       if (call?.id !== id || args.revision_previa !== call.revision) return { status: 'rejected', revision: call?.revision, reason: 'revision_mismatch' };
       const target = call;
-      target.text = args.transcripcion_interlocutor; target.liveFicha = args.ficha;
+      target.text = args.transcripcion_interlocutor;
       target.revision++; target.captionReceivedAt = Date.now(); target.cache.delete('call.ready_to_answer');
       const revision = target.revision;
+      emit({ type: 'agent.status', status: 'analyzing', revision });
       // Este texto lo reporta el reasoner; no se presenta como transcripción acústica verificada.
       emit({ type: 'transcript.update', id: 'phone-live-reported', speaker: 'caller', text: target.text,
         sequence: 0, final: false, revision, source: 'live_reasoner_report_not_audio_verified', identity_verified: false });
@@ -187,17 +186,22 @@ export function createPhoneBridge(config) {
       finally { wav.fill(0); }
     })();
   }
-  function caption(speaker, at, text) {
+  function caption(speaker, at, text, provenance = {}) {
     const id = `phone-${speaker}-${at}`;
-    if (call.captions.has(id) || (speaker === 'agent' && [...call.captions.values()].filter(line => line.speaker === 'agent').length >= 200)) return;
-    call.captions.set(id, { id, speaker, at, text, sequence: -1 });
+    const previous = call.captions.get(id);
+    if (previous?.text === text || (!previous && speaker === 'agent' && [...call.captions.values()].filter(line => line.speaker === 'agent').length >= 200)) return;
+    // Solo las instantáneas ordenadas del modelo pueden corregir su propio texto.
+    // Un reintento de la transcripción acústica conserva la deduplicación previa.
+    if (previous && (!provenance.source || previous.source !== provenance.source)) return;
+    call.captions.set(id, { id, speaker, at, text, sequence: -1, ...provenance });
     const ordered = [...call.captions.values()].sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
     // Una frase por burbuja; un evento atrasado reordena las existentes sin duplicarlas.
     ordered.forEach((line, sequence) => {
       if (line.sequence === sequence) return;
       line.sequence = sequence;
       emit({ type: 'transcript.update', id: line.id, speaker: line.speaker, text: line.text, sequence,
-        final: true, revision: call.revision, source: 'vapi_transcript_final' });
+        final: true, revision: call.revision, source: line.source ?? 'vapi_transcript_final',
+        ...(line.spoken_verified === false ? { spoken_verified: false } : {}) });
     });
   }
   async function stopForRisk(target, revision, reason = 'risk_detected') {
@@ -260,7 +264,6 @@ export function createPhoneBridge(config) {
         }
         if (target === call && !target.closed && revision === target.revision && watchers.size) {
           for (const event of assessmentEvents(target, text)) {
-            if (event.type === 'call.ready_to_answer' && target.liveInput && !liveFichaComplete(target)) continue;
             if (event.type === 'assessment.update') { target.assessmentState = event.assessment.estado; target.assessmentRevision = revision; }
             emit(event);
           }
@@ -324,6 +327,24 @@ export function createPhoneBridge(config) {
     }
     call.controlUrl = vapiControlUrl(event.call.monitor?.controlUrl, id) ?? call.controlUrl;
     if (!transcript && event.type !== 'conversation-update') return;
+    if (event.type === 'conversation-update' && Array.isArray(event.messages) && event.messages.length <= 200 &&
+        event.messages.some(row => ['bot', 'assistant'].includes(row?.role) && ['model', 'force-say'].includes(row?.source))) {
+      // modelOutputInMessagesEnabled evita reconstruir el historial desde el ASR
+      // de la propia voz. Vapi entrega ese texto por conversation-update, no por
+      // transcript: conservarlo en la APK sin convertirlo en palabras del llamante.
+      // Es texto generado; no afirma qué llegó a oír la otra persona al interrumpir.
+      if (!Number.isFinite(event.timestamp) || event.timestamp <= (call.assistantSnapshotAt ?? -Infinity)) return;
+      call.assistantSnapshotAt = event.timestamp;
+      for (const row of event.messages) {
+        const text = row?.message ?? row?.content;
+        if (!['bot', 'assistant'].includes(row?.role) || !['model', 'force-say'].includes(row?.source) ||
+            !Number.isFinite(row.time) || row.time < 0 || typeof text !== 'string' || !text.trim() || text.length > 4000) continue;
+        caption('agent', row.time, text, { source: row.source === 'model' ? 'vapi_assistant_model_output' : 'vapi_first_message', spoken_verified: false });
+      }
+      // Las palabras del llamante siguen viniendo exclusivamente de los finales
+      // de Scribe. Una instantánea del historial nunca las sustituye ni reanaliza.
+      return;
+    }
     const source = transcript ? 'vapi_transcript_final' : 'vapi_conversation';
     // No duplicar un turno si el proveedor emite ambos formatos.
     if (call.source && call.source !== source) return;

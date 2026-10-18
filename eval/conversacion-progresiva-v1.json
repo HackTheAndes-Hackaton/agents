@@ -1,0 +1,76 @@
+{
+  "version": "conversacion-progresiva-v1",
+  "origin": "Casos sintéticos originales de desarrollo; etiquetas propuestas sin validación experta. No es un test independiente ni mide reconocimiento de audio.",
+  "cases": [
+    {
+      "id": "reunion",
+      "scenario": "reunion",
+      "label": false,
+      "alert_from_turn": null,
+      "expected_state": "observar",
+      "turns": [
+        "Llamo como particular para coordinar una reunión mañana."
+      ]
+    },
+    {
+      "id": "prestamo",
+      "scenario": "prestamo",
+      "label": false,
+      "alert_from_turn": null,
+      "expected_state": "verificar",
+      "turns": [
+        "¿Me puedes prestar veinte soles? Puedo esperar mientras lo verificas por el canal que ya conoces."
+      ]
+    },
+    {
+      "id": "extorsion",
+      "scenario": "extorsion",
+      "label": true,
+      "alert_from_turn": 1,
+      "expected_state": "alertar",
+      "turns": [
+        "Transfiere mil soles ahora. No llames a nadie. Si no pagas, le haremos daño a tu familia."
+      ]
+    },
+    {
+      "id": "codigo_bancario",
+      "scenario": "codigo_bancario",
+      "label": true,
+      "alert_from_turn": 1,
+      "expected_state": "alertar",
+      "turns": [
+        "Soy del banco. Dime el código que te llegó por SMS para autorizar mi operación."
+      ]
+    },
+    {
+      "id": "amenaza_recibida",
+      "scenario": "amenaza_recibida",
+      "label": false,
+      "alert_from_turn": null,
+      "expected_state": "observar",
+      "turns": [
+        "Me llamaron para amenazarme. Quiero dejar constancia y pedir orientación, no estoy amenazando a nadie."
+      ]
+    },
+    {
+      "id": "negacion",
+      "scenario": "negacion",
+      "label": false,
+      "alert_from_turn": null,
+      "expected_state": "observar",
+      "turns": [
+        "No necesito pagos ni datos personales. Quiero confirmar el horario de una reunión."
+      ]
+    },
+    {
+      "id": "peticion_sin_contexto",
+      "scenario": "peticion_sin_contexto",
+      "label": false,
+      "alert_from_turn": null,
+      "expected_state": "inconcluso",
+      "turns": [
+        "Necesito que hagas una cosa, todavía no te he dicho cuál."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1715 @@
+{
+  "variant": "refinado",
+  "at": "2026-10-18T09:32:56.589Z",
+  "synthetic_only": true,
+  "pstn_tested": false,
+  "corpus": "peru-contexto-v1",
+  "corpus_sha256": "f127b344810df2502668a7da62477df516a1f34539e0d158d2a61e4240adffbb",
+  "rows": [
+    {
+      "id": "pe01",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "inconcluso",
+        "motivo": "Falta información suficiente para interpretar este fragmento.",
+        "orientacion": "Pide repetir o aclarar la petición. No completes palabras dudosas ni interpretes un fallo de análisis como ausencia de riesgo.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "saludo",
+            "cita": "Habla causa, ¿estás por ahí?"
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 732
+    },
+    {
+      "id": "pe01",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "saludo",
+            "cita": "Habla causa, ¿estás por ahí?"
+          },
+          {
+            "tipo": "negacion",
+            "cita": "Llamo por la reunión de mañana, no necesito plata ni códigos."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 884
+    },
+    {
+      "id": "pe02",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.07,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "motivo": "Señales seleccionadas en el texto: una petición de dinero. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Oe pata, ¿me puedes yapear veinte soles?"
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "peticion_economica_por_verificar",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "peticion_pago",
+                "cita": "Oe pata, ¿me puedes yapear veinte soles?"
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 801
+    },
+    {
+      "id": "pe02",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "motivo": "Señales seleccionadas en el texto: una petición de dinero. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Oe pata, ¿me puedes yapear veinte soles?"
+          },
+          {
+            "tipo": "verificacion_independiente",
+            "cita": "Si prefieres lo comprobamos por el número que ya tienes guardado; puedo esperar."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "peticion_economica_por_verificar",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "peticion_pago",
+                "cita": "Oe pata, ¿me puedes yapear veinte soles?"
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 958
+    },
+    {
+      "id": "pe03",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.02,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud_cotidiana",
+            "cita": "Habla, te llamo por tu negocio."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "solicitud_cotidiana",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "solicitud_cotidiana",
+                "cita": "Habla, te llamo por tu negocio."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 856
+    },
+    {
+      "id": "pe03",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "motivo": "Señales seleccionadas en el texto: una posible amenaza. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "amenaza",
+            "cita": "Paga el cupo hoy por Yape o le hacemos daño a tu familia."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "amenaza_por_verificar",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "amenaza",
+                "cita": "Paga el cupo hoy por Yape o le hacemos daño a tu familia."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1056
+    },
+    {
+      "id": "pe04",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "motivo": "Señales seleccionadas en el texto: presión para actuar de inmediato. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "presion",
+            "cita": "Escúchame bien."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1097
+    },
+    {
+      "id": "pe04",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "motivo": "Señales seleccionadas en el texto: una posible amenaza. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "amenaza",
+            "cita": "Tengo a tu familia secuestrada: deposita ahora y no llames a nadie."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "amenaza_por_verificar",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "amenaza",
+                "cita": "Tengo a tu familia secuestrada: deposita ahora y no llames a nadie."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 841
+    },
+    {
+      "id": "pe05",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.28,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "motivo": "Señales seleccionadas en el texto: una identidad declarada que aún no se ha comprobado. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "autoridad_alegada",
+            "cita": "Buenas, digo que soy de tu banco."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 818
+    },
+    {
+      "id": "pe05",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "motivo": "Señales seleccionadas en el texto: una identidad declarada que aún no se ha comprobado, una petición de claves o códigos. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "autoridad_alegada",
+            "cita": "Buenas, digo que soy de tu banco."
+          },
+          {
+            "tipo": "peticion_credenciales",
+            "cita": "Dime el código de acceso del SMS, no cuelgues para llamar a la central."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "posible_fraude_credenciales",
+            "interpretacion": "hipotesis_preventiva",
+            "evidencias": [
+              {
+                "tipo": "peticion_credenciales",
+                "cita": "Dime el código de acceso del SMS, no cuelgues para llamar a la central."
+              },
+              {
+                "tipo": "autoridad_alegada",
+                "cita": "Buenas, digo que soy de tu banco."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 839
+    },
+    {
+      "id": "pe06",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "motivo": "Señales seleccionadas en el texto: una identidad declarada que aún no se ha comprobado. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "autoridad_alegada",
+            "cita": "Digo que soy de SUNAT."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1011
+    },
+    {
+      "id": "pe06",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 0.99,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "motivo": "Señales seleccionadas en el texto: una identidad declarada que aún no se ha comprobado, una petición de dinero, presión para actuar de inmediato. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "autoridad_alegada",
+            "cita": "Digo que soy de SUNAT."
+          },
+          {
+            "tipo": "peticion_pago",
+            "cita": "Transfiere ahora a mi cuenta personal para evitar una multa, no consultes con nadie."
+          },
+          {
+            "tipo": "presion",
+            "cita": "Transfiere ahora a mi cuenta personal para evitar una multa, no consultes con nadie."
+          },
+          {
+            "tipo": "aislamiento",
+            "cita": "Transfiere ahora a mi cuenta personal para evitar una multa, no consultes con nadie."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "posible_fraude_pago",
+            "interpretacion": "hipotesis_preventiva",
+            "evidencias": [
+              {
+                "tipo": "peticion_pago",
+                "cita": "Transfiere ahora a mi cuenta personal para evitar una multa, no consultes con nadie."
+              },
+              {
+                "tipo": "presion",
+                "cita": "Transfiere ahora a mi cuenta personal para evitar una multa, no consultes con nadie."
+              },
+              {
+                "tipo": "aislamiento",
+                "cita": "Transfiere ahora a mi cuenta personal para evitar una multa, no consultes con nadie."
+              },
+              {
+                "tipo": "autoridad_alegada",
+                "cita": "Digo que soy de SUNAT."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 959
+    },
+    {
+      "id": "pe07",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "relato_amenaza",
+            "cita": "Mi causa está asustado."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "relato_o_denuncia",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "relato_amenaza",
+                "cita": "Mi causa está asustado."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 885
+    },
+    {
+      "id": "pe07",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.04,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "relato_amenaza",
+            "cita": "Mi causa está asustado."
+          },
+          {
+            "tipo": "relato_amenaza",
+            "cita": "Ayer lo amenazaron para cobrarle un cupo; llamo para pedir orientación."
+          },
+          {
+            "tipo": "solicitud_cotidiana",
+            "cita": "Ayer lo amenazaron para cobrarle un cupo; llamo para pedir orientación."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "relato_o_denuncia",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "relato_amenaza",
+                "cita": "Mi causa está asustado."
+              },
+              {
+                "tipo": "relato_amenaza",
+                "cita": "Ayer lo amenazaron para cobrarle un cupo; llamo para pedir orientación."
+              }
+            ]
+          },
+          {
+            "categoria": "solicitud_cotidiana",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "solicitud_cotidiana",
+                "cita": "Ayer lo amenazaron para cobrarle un cupo; llamo para pedir orientación."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1125
+    },
+    {
+      "id": "pe08",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "inconcluso",
+        "motivo": "Falta información suficiente para interpretar este fragmento.",
+        "orientacion": "Pide repetir o aclarar la petición. No completes palabras dudosas ni interpretes un fallo de análisis como ausencia de riesgo.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "saludo",
+            "cita": "Habla pe."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 797
+    },
+    {
+      "id": "pe08",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "saludo",
+            "cita": "Habla pe."
+          },
+          {
+            "tipo": "negacion",
+            "cita": "No quiero dinero ni la clave; solo quiero dejar un recado."
+          },
+          {
+            "tipo": "solicitud_cotidiana",
+            "cita": "No quiero dinero ni la clave; solo quiero dejar un recado."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "solicitud_cotidiana",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "solicitud_cotidiana",
+                "cita": "No quiero dinero ni la clave; solo quiero dejar un recado."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1069
+    },
+    {
+      "id": "pe09",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "inconcluso",
+        "motivo": "Señales seleccionadas en el texto: una petición todavía sin clasificar. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Pide repetir o aclarar la petición. No completes palabras dudosas ni interpretes un fallo de análisis como ausencia de riesgo.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud",
+            "cita": "¿Podemos revisar lo que me debes?"
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 828
+    },
+    {
+      "id": "pe09",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.1,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud_cotidiana",
+            "cita": "¿Podemos revisar lo que me debes?"
+          },
+          {
+            "tipo": "negacion",
+            "cita": "No son quinientos, son cincuenta soles; verifica el comprobante con calma."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "solicitud_cotidiana",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "solicitud_cotidiana",
+                "cita": "¿Podemos revisar lo que me debes?"
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 852
+    },
+    {
+      "id": "pe10",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "inconcluso",
+        "motivo": "Falta información suficiente para interpretar este fragmento.",
+        "orientacion": "Pide repetir o aclarar la petición. No completes palabras dudosas ni interpretes un fallo de análisis como ausencia de riesgo.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "saludo",
+            "cita": "Buenas, llamo por una entrega."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 859
+    },
+    {
+      "id": "pe10",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "saludo",
+            "cita": "Buenas, llamo por una entrega."
+          },
+          {
+            "tipo": "negacion",
+            "cita": "Dime el código de pedido para ubicar el paquete, no una contraseña ni un código bancario."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 875
+    },
+    {
+      "id": "pe11",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "inconcluso",
+        "motivo": "Falta información suficiente para interpretar este fragmento.",
+        "orientacion": "Pide repetir o aclarar la petición. No completes palabras dudosas ni interpretes un fallo de análisis como ausencia de riesgo.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "ambiguo",
+            "cita": "Supuestamente ganaste un premio."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 811
+    },
+    {
+      "id": "pe11",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 0.98,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "motivo": "Señales seleccionadas en el texto: una posible amenaza, una petición de dinero. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "amenaza",
+            "cita": "Yapéame una comisión para liberarlo ahora, sin consultar al banco ni a tu familia."
+          },
+          {
+            "tipo": "peticion_pago",
+            "cita": "Yapéame una comisión para liberarlo ahora, sin consultar al banco ni a tu familia."
+          },
+          {
+            "tipo": "contexto",
+            "cita": "Supuestamente ganaste un premio."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "posible_extorsion",
+            "interpretacion": "hipotesis_preventiva",
+            "evidencias": [
+              {
+                "tipo": "amenaza",
+                "cita": "Yapéame una comisión para liberarlo ahora, sin consultar al banco ni a tu familia."
+              },
+              {
+                "tipo": "peticion_pago",
+                "cita": "Yapéame una comisión para liberarlo ahora, sin consultar al banco ni a tu familia."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 914
+    },
+    {
+      "id": "pe12",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "motivo": "Señales seleccionadas en el texto: una identidad declarada que aún no se ha comprobado. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "autoridad_alegada",
+            "cita": "Digo que soy del soporte del banco."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 810
+    },
+    {
+      "id": "pe12",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 0.99,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "motivo": "Señales seleccionadas en el texto: una identidad declarada que aún no se ha comprobado, una petición de acceso remoto, una petición de claves o códigos. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "autoridad_alegada",
+            "cita": "Digo que soy del soporte del banco."
+          },
+          {
+            "tipo": "acceso_remoto",
+            "cita": "Instala control remoto para que entre a tu banca y dime el token, es urgente."
+          },
+          {
+            "tipo": "peticion_credenciales",
+            "cita": "Instala control remoto para que entre a tu banca y dime el token, es urgente."
+          },
+          {
+            "tipo": "presion",
+            "cita": "Instala control remoto para que entre a tu banca y dime el token, es urgente."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "posible_fraude_credenciales",
+            "interpretacion": "hipotesis_preventiva",
+            "evidencias": [
+              {
+                "tipo": "peticion_credenciales",
+                "cita": "Instala control remoto para que entre a tu banca y dime el token, es urgente."
+              },
+              {
+                "tipo": "autoridad_alegada",
+                "cita": "Digo que soy del soporte del banco."
+              }
+            ]
+          },
+          {
+            "categoria": "posible_fraude_acceso_remoto",
+            "interpretacion": "hipotesis_preventiva",
+            "evidencias": [
+              {
+                "tipo": "acceso_remoto",
+                "cita": "Instala control remoto para que entre a tu banca y dime el token, es urgente."
+              },
+              {
+                "tipo": "autoridad_alegada",
+                "cita": "Digo que soy del soporte del banco."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 1007
+    },
+    {
+      "id": "pe13",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "inconcluso",
+        "motivo": "Falta información suficiente para interpretar este fragmento.",
+        "orientacion": "Pide repetir o aclarar la petición. No completes palabras dudosas ni interpretes un fallo de análisis como ausencia de riesgo.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "ambiguo",
+            "cita": "Soy tu causa, ¿no reconoces mi voz?"
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 846
+    },
+    {
+      "id": "pe13",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "motivo": "Señales seleccionadas en el texto: una posible amenaza. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "amenaza",
+            "cita": "Soy tu causa, ¿no reconoces mi voz?"
+          },
+          {
+            "tipo": "solicitud_cotidiana",
+            "cita": "No te pido nada, solo averiguo el horario de atención."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "amenaza_por_verificar",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "amenaza",
+                "cita": "Soy tu causa, ¿no reconoces mi voz?"
+              }
+            ]
+          },
+          {
+            "categoria": "solicitud_cotidiana",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "solicitud_cotidiana",
+                "cita": "No te pido nada, solo averiguo el horario de atención."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 870
+    },
+    {
+      "id": "pe14",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.06,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud_cotidiana",
+            "cita": "Llamo para recordar una deuda."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "solicitud_cotidiana",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "solicitud_cotidiana",
+                "cita": "Llamo para recordar una deuda."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 814
+    },
+    {
+      "id": "pe14",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.11,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "motivo": "Señales seleccionadas en el texto: una petición de dinero. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Llamo para recordar una deuda."
+          },
+          {
+            "tipo": "negacion",
+            "cita": "Puedes consultar el contrato en tu canal habitual; no necesito tus claves ni que pagues hoy."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "peticion_economica_por_verificar",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "peticion_pago",
+                "cita": "Llamo para recordar una deuda."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 901
+    },
+    {
+      "id": "pe15",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "motivo": "Señales seleccionadas en el texto: una petición de dinero. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Estoy con una emergencia y necesito plata."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "peticion_economica_por_verificar",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "peticion_pago",
+                "cita": "Estoy con una emergencia y necesito plata."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 820
+    },
+    {
+      "id": "pe15",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.32,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "motivo": "Señales seleccionadas en el texto: una petición de dinero. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Estoy con una emergencia y necesito plata."
+          },
+          {
+            "tipo": "verificacion_independiente",
+            "cita": "Si no estás seguro, llama al contacto que ya tienes guardado para verificar, yo espero."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "peticion_economica_por_verificar",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "peticion_pago",
+                "cita": "Estoy con una emergencia y necesito plata."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 942
+    },
+    {
+      "id": "pe16",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "contexto",
+            "cita": "En la radio comentan una modalidad."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 765
+    },
+    {
+      "id": "pe16",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.05,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "relato_amenaza",
+            "cita": "El reportaje dice «paga el cupo o te hago daño»; yo no te estoy amenazando."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "relato_o_denuncia",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "relato_amenaza",
+                "cita": "El reportaje dice «paga el cupo o te hago daño»; yo no te estoy amenazando."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 964
+    },
+    {
+      "id": "pe17",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.11,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "verificar",
+        "motivo": "Señales seleccionadas en el texto: una petición de dinero. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Antes de cualquier pago, dato o acceso, propone verificar por un canal conocido de antemano. No uses un número o enlace proporcionado en esta llamada ni solicites claves o códigos.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Causa, necesito que me hagas una transferencia ahorita."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "peticion_economica_por_verificar",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "peticion_pago",
+                "cita": "Causa, necesito que me hagas una transferencia ahorita."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 818
+    },
+    {
+      "id": "pe17",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 0.92,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "motivo": "Señales seleccionadas en el texto: una petición de dinero, presión para actuar de inmediato. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "peticion_pago",
+            "cita": "Causa, necesito que me hagas una transferencia ahorita."
+          },
+          {
+            "tipo": "presion",
+            "cita": "No llames a nadie para verificar y no cuelgues; el pago tiene que hacerse en este instante."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "posible_fraude_pago",
+            "interpretacion": "hipotesis_preventiva",
+            "evidencias": [
+              {
+                "tipo": "peticion_pago",
+                "cita": "Causa, necesito que me hagas una transferencia ahorita."
+              },
+              {
+                "tipo": "presion",
+                "cita": "No llames a nadie para verificar y no cuelgues; el pago tiene que hacerse en este instante."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 858
+    },
+    {
+      "id": "pe18",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "negacion",
+            "cita": "No necesito que me digas tu nombre."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 776
+    },
+    {
+      "id": "pe18",
+      "turn": 2,
+      "status": "ok",
+      "alerta": true,
+      "probability": 0.99,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "alertar",
+        "motivo": "Señales seleccionadas en el texto: una posible amenaza. No verifican una identidad ni confirman una estafa.",
+        "orientacion": "Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.",
+        "alerta": true,
+        "evidencia_textual": [
+          {
+            "tipo": "negacion",
+            "cita": "No necesito que me digas tu nombre."
+          },
+          {
+            "tipo": "amenaza",
+            "cita": "Si no me pagas hoy, vamos a hacerle daño a tu familia."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "amenaza_por_verificar",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "amenaza",
+                "cita": "Si no me pagas hoy, vamos a hacerle daño a tu familia."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 787
+    },
+    {
+      "id": "pe19",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "inconcluso",
+        "motivo": "Falta información suficiente para interpretar este fragmento.",
+        "orientacion": "Pide repetir o aclarar la petición. No completes palabras dudosas ni interpretes un fallo de análisis como ausencia de riesgo.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "saludo",
+            "cita": "Oe, sobre lo de ayer."
+          }
+        ],
+        "modalidades": [],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 907
+    },
+    {
+      "id": "pe19",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "inconcluso",
+        "motivo": "Hay un fragmento marcado como inaudible; hace falta aclaración.",
+        "orientacion": "Pide repetir o aclarar la petición. No completes palabras dudosas ni interpretes un fallo de análisis como ausencia de riesgo.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud_cotidiana",
+            "cita": "Necesito el [inaudible] antes de salir."
+          },
+          {
+            "tipo": "contexto",
+            "cita": "Oe, sobre lo de ayer."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "solicitud_cotidiana",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "solicitud_cotidiana",
+                "cita": "Necesito el [inaudible] antes de salir."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": true,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 890
+    },
+    {
+      "id": "pe20",
+      "turn": 1,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "observar",
+        "motivo": "No se ha identificado una petición de riesgo en el texto disponible; esto no garantiza seguridad.",
+        "orientacion": "Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud_cotidiana",
+            "cita": "Causa, pásame una china."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "solicitud_cotidiana",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "solicitud_cotidiana",
+                "cita": "Causa, pásame una china."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 803
+    },
+    {
+      "id": "pe20",
+      "turn": 2,
+      "status": "ok",
+      "alerta": false,
+      "probability": 0.01,
+      "model": "gpt-6-luna",
+      "assessment": {
+        "version": "orientacion_v1",
+        "estado": "inconcluso",
+        "motivo": "Falta información suficiente para interpretar este fragmento.",
+        "orientacion": "Pide repetir o aclarar la petición. No completes palabras dudosas ni interpretes un fallo de análisis como ausencia de riesgo.",
+        "alerta": false,
+        "evidencia_textual": [
+          {
+            "tipo": "solicitud_cotidiana",
+            "cita": "Causa, pásame una china."
+          },
+          {
+            "tipo": "ambiguo",
+            "cita": "Todavía no hemos aclarado si hablamos de una cantidad o de otra cosa."
+          }
+        ],
+        "modalidades": [
+          {
+            "categoria": "solicitud_cotidiana",
+            "interpretacion": "conducta_por_revisar",
+            "evidencias": [
+              {
+                "tipo": "solicitud_cotidiana",
+                "cita": "Causa, pásame una china."
+              }
+            ]
+          }
+        ],
+        "explicacion_disponible": true,
+        "fragmento_inaudible_marcado": false,
+        "voz_sintetica": {
+          "estado": "no_evaluada",
+          "motivo": "No hay un detector acústico validado en este canal."
+        },
+        "identidades_verificadas": [],
+        "acciones_automaticas": false
+      },
+      "latency_ms": 919
+    }
+  ],
+  "summary": {
+    "calls": 20,
+    "expected_predictions": 40,
+    "successful_predictions": 40,
+    "failed_or_missing_predictions": 0,
+    "final_confusion": {
+      "tp": 8,
+      "tn": 10,
+      "fp": 0,
+      "fn": 0,
+      "unanswered": 0,
+      "unlabelled": 2
+    },
+    "final_answer_coverage": 1,
+    "balanced_accuracy_answered_only": 1,
+    "macro_f1_answered_only": 1,
+    "fraud_recall_including_failures": 1,
+    "legitimate_recall_including_failures": 1,
+    "legitimate_calls_with_any_alert": [],
+    "false_alert_call_rate": 0,
+    "premature_alert_calls": [],
+    "missed_actionable_calls": [],
+    "mean_delay_turns_detected_only": 0,
+    "unlabelled_calls_with_alert": [],
+    "brier_answered_final_only": 0.008094444444444444,
+    "mean_latency_ms": 884.1,
+    "limitation": "Corpus sintético de desarrollo; no estima rendimiento real ni calibra el porcentaje. Latencia de inferencia, no de telefonía. Cortes reales no evaluados."
+  }
+}

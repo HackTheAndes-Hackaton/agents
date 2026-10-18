@@ -1,0 +1,9 @@
+{
+  "synthetic_only": true,
+  "description": "Frases ficticias para comparar reconocimiento y latencia; no validan precisión de llamadas reales.",
+  "cases": [
+    {"id":"reunion-negacion","text":"Llamo para coordinar una reunión mañana. No necesito pagos, códigos ni datos personales."},
+    {"id":"amenaza-directa","text":"Si no me transfieres quinientos soles por Yape hoy, le voy a hacer daño a tu familia. No se lo cuentes a nadie."},
+    {"id":"correccion-importe","text":"Son quinientos soles. Perdón, me equivoqué: son cincuenta soles, no quinientos. Solo quiero consultar el horario."}
+  ]
+}

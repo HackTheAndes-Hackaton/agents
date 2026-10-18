@@ -1,0 +1,207 @@
+{
+  "version": "peru-contexto-v1",
+  "synthetic_only": true,
+  "purpose": "Regresión semántica progresiva; no es corpus ASR ni muestra representativa del Perú.",
+  "cases": [
+    {
+      "id": "pe01",
+      "scenario": "cotidiano",
+      "turns": [
+        "Habla causa, ¿estás por ahí?",
+        "Llamo por la reunión de mañana, no necesito plata ni códigos."
+      ],
+      "label": false,
+      "alert_from_turn": null
+    },
+    {
+      "id": "pe02",
+      "scenario": "yape_legitimo",
+      "turns": [
+        "Oe pata, ¿me puedes yapear veinte soles?",
+        "Si prefieres lo comprobamos por el número que ya tienes guardado; puedo esperar."
+      ],
+      "label": false,
+      "alert_from_turn": null
+    },
+    {
+      "id": "pe03",
+      "scenario": "extorsion_cupo",
+      "turns": [
+        "Habla, te llamo por tu negocio.",
+        "Paga el cupo hoy por Yape o le hacemos daño a tu familia."
+      ],
+      "label": true,
+      "alert_from_turn": 2
+    },
+    {
+      "id": "pe04",
+      "scenario": "secuestro",
+      "turns": [
+        "Escúchame bien.",
+        "Tengo a tu familia secuestrada: deposita ahora y no llames a nadie."
+      ],
+      "label": true,
+      "alert_from_turn": 2
+    },
+    {
+      "id": "pe05",
+      "scenario": "otp_banco",
+      "turns": [
+        "Buenas, digo que soy de tu banco.",
+        "Dime el código de acceso del SMS, no cuelgues para llamar a la central."
+      ],
+      "label": true,
+      "alert_from_turn": 2
+    },
+    {
+      "id": "pe06",
+      "scenario": "sunat",
+      "turns": [
+        "Digo que soy de SUNAT.",
+        "Transfiere ahora a mi cuenta personal para evitar una multa, no consultes con nadie."
+      ],
+      "label": true,
+      "alert_from_turn": 2
+    },
+    {
+      "id": "pe07",
+      "scenario": "relato",
+      "turns": [
+        "Mi causa está asustado.",
+        "Ayer lo amenazaron para cobrarle un cupo; llamo para pedir orientación."
+      ],
+      "label": false,
+      "alert_from_turn": null
+    },
+    {
+      "id": "pe08",
+      "scenario": "negacion",
+      "turns": [
+        "Habla pe.",
+        "No quiero dinero ni la clave; solo quiero dejar un recado."
+      ],
+      "label": false,
+      "alert_from_turn": null
+    },
+    {
+      "id": "pe09",
+      "scenario": "monto_corregido",
+      "turns": [
+        "¿Podemos revisar lo que me debes?",
+        "No son quinientos, son cincuenta soles; verifica el comprobante con calma."
+      ],
+      "label": false,
+      "alert_from_turn": null
+    },
+    {
+      "id": "pe10",
+      "scenario": "pedido_codigo",
+      "turns": [
+        "Buenas, llamo por una entrega.",
+        "Dime el código de pedido para ubicar el paquete, no una contraseña ni un código bancario."
+      ],
+      "label": false,
+      "alert_from_turn": null
+    },
+    {
+      "id": "pe11",
+      "scenario": "premio",
+      "turns": [
+        "Supuestamente ganaste un premio.",
+        "Yapéame una comisión para liberarlo ahora, sin consultar al banco ni a tu familia."
+      ],
+      "label": true,
+      "alert_from_turn": 2
+    },
+    {
+      "id": "pe12",
+      "scenario": "remoto",
+      "turns": [
+        "Digo que soy del soporte del banco.",
+        "Instala control remoto para que entre a tu banca y dime el token, es urgente."
+      ],
+      "label": true,
+      "alert_from_turn": 2
+    },
+    {
+      "id": "pe13",
+      "scenario": "familiaridad",
+      "turns": [
+        "Soy tu causa, ¿no reconoces mi voz?",
+        "No te pido nada, solo averiguo el horario de atención."
+      ],
+      "label": false,
+      "alert_from_turn": null
+    },
+    {
+      "id": "pe14",
+      "scenario": "cobranza",
+      "turns": [
+        "Llamo para recordar una deuda.",
+        "Puedes consultar el contrato en tu canal habitual; no necesito tus claves ni que pagues hoy."
+      ],
+      "label": false,
+      "alert_from_turn": null
+    },
+    {
+      "id": "pe15",
+      "scenario": "emergencia",
+      "turns": [
+        "Estoy con una emergencia y necesito plata.",
+        "Si no estás seguro, llama al contacto que ya tienes guardado para verificar, yo espero."
+      ],
+      "label": false,
+      "alert_from_turn": null
+    },
+    {
+      "id": "pe16",
+      "scenario": "noticia",
+      "turns": [
+        "En la radio comentan una modalidad.",
+        "El reportaje dice «paga el cupo o te hago daño»; yo no te estoy amenazando."
+      ],
+      "label": false,
+      "alert_from_turn": null
+    },
+    {
+      "id": "pe17",
+      "scenario": "presion_secreto",
+      "turns": [
+        "Causa, necesito que me hagas una transferencia ahorita.",
+        "No llames a nadie para verificar y no cuelgues; el pago tiene que hacerse en este instante."
+      ],
+      "label": true,
+      "alert_from_turn": 2
+    },
+    {
+      "id": "pe18",
+      "scenario": "amenaza_sin_ficha",
+      "turns": [
+        "No necesito que me digas tu nombre.",
+        "Si no me pagas hoy, vamos a hacerle daño a tu familia."
+      ],
+      "label": true,
+      "alert_from_turn": 2
+    },
+    {
+      "id": "pe19",
+      "scenario": "inaudible",
+      "turns": [
+        "Oe, sobre lo de ayer.",
+        "Necesito el [inaudible] antes de salir."
+      ],
+      "label": null,
+      "alert_from_turn": null
+    },
+    {
+      "id": "pe20",
+      "scenario": "cantidad_ambigua",
+      "turns": [
+        "Causa, pásame una china.",
+        "Todavía no hemos aclarado si hablamos de una cantidad o de otra cosa."
+      ],
+      "label": null,
+      "alert_from_turn": null
+    }
+  ]
+}

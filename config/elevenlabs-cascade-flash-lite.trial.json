@@ -1,0 +1,12 @@
+{
+  "conversation_config": {
+    "agent": {
+      "prompt": {
+        "llm": "gemini-3.5-flash-lite",
+        "reasoning_effort": "minimal",
+        "thinking_budget": null,
+        "max_tokens": 160
+      }
+    }
+  }
+}

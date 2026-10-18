@@ -1,0 +1,35 @@
+{
+  "synthetic_only": true,
+  "model_history": true,
+  "scenario": "recado, corrección de hora, recuerdo, rol e identidad",
+  "turns": [
+    {
+      "input": "Hola, quiero dejar un mensaje. Queremos coordinar una reunión vecinal mañana a las cuatro de la tarde.",
+      "response": "Entendido, quieres coordinar una reunión vecinal mañana a las cuatro de la tarde. ¿Quieres que le deje ese mensaje a alguien en particular?",
+      "repeated_greeting": false
+    },
+    {
+      "input": "Me corrijo: sería a las cinco de la tarde. Solo avísale, por favor.",
+      "response": "Perfecto, aviso que la reunión vecinal será mañana a las cinco de la tarde. ¿Me dices a quién le aviso?",
+      "repeated_greeting": false
+    },
+    {
+      "input": "¿Qué motivo y qué hora te dije?",
+      "response": "Me dijiste coordinar una reunión vecinal mañana a las cinco de la tarde.",
+      "repeated_greeting": false
+    },
+    {
+      "input": "¿Con quién estoy hablando?",
+      "response": "Soy su asistente, contesto de su parte.",
+      "repeated_greeting": false
+    },
+    {
+      "input": "¿Eres una inteligencia artificial o una persona?",
+      "response": "Soy una inteligencia artificial, aquí para ayudarte con tus mensajes.",
+      "repeated_greeting": false
+    }
+  ],
+  "new_greetings": 0,
+  "audio_latency_measured": false,
+  "note": "Entradas de texto por control Vapi; confirma continuidad de historial, no calidad acústica ni demora en una conferencia real."
+}

@@ -6,12 +6,12 @@ const object = value => value !== null && typeof value === 'object' && !Array.is
 const fields = ['nombre', 'entidad', 'motivo', 'peticion'];
 const empty = { type: 'object', properties: {}, additionalProperties: false };
 export const livePhoneTools = [
-  { name: 'evaluar_conversacion', description: 'Evalúa el texto del interlocutor y devuelve orientación vigente. Copia literalmente sus palabras y negaciones; no incluyas voz del agente, instrucciones internas de delegación ni un resumen. La primera revision_previa es 0; después usa la revisión del último resultado. Consulta estado solo si falta ese dato o hay conflicto. Reutiliza request_id solo al reintentar exactamente la misma petición. La ficha contiene citas literales o cadenas vacías, nunca identidad verificada.', inputSchema: {
-    type: 'object', additionalProperties: false, required: ['request_id', 'revision_previa', 'transcripcion_interlocutor', 'ficha'], properties: {
+  { name: 'evaluar_conversacion', description: 'Evalúa progresivamente cada intervención con contenido, incluso peticiones cotidianas y negaciones. Copia palabras del interlocutor; excluye al agente e instrucciones internas. Primera revision_previa=0; luego usa la revisión devuelta, consulta estado solo ante conflicto. Reutiliza request_id únicamente para un reintento idéntico. No necesitas nombre, entidad ni ficha para analizar o alertar; no los preguntes para completar la herramienta.', inputSchema: {
+    type: 'object', additionalProperties: false, required: ['request_id', 'revision_previa', 'transcripcion_interlocutor'], properties: {
       request_id: { type: 'string', minLength: 1, maxLength: 80, pattern: '^[a-zA-Z0-9_-]+$' },
       revision_previa: { type: 'integer', minimum: 0 },
       transcripcion_interlocutor: { type: 'string', minLength: 1, maxLength: 12000 },
-      ficha: { type: 'object', additionalProperties: false, required: fields,
+      ficha: { type: 'object', description: 'Opcional, por compatibilidad. Solo citas literales ya dichas; no es un formulario ni un requisito para actuar.', additionalProperties: false,
         properties: Object.fromEntries(fields.map(key => [key, { type: 'string', maxLength: 300 }])) },
     },
   } },
@@ -30,12 +30,12 @@ function validate(name, args) {
   if (name === 'consultar_estado') return keys.length === 0;
   if (name === 'solicitar_corte') return keys.length === 1 && Number.isSafeInteger(args.revision) && args.revision > 0;
   if (name === 'finalizar_por_peticion') return keys.length === 2 && Number.isSafeInteger(args.revision) && args.revision > 0 && typeof args.cita === 'string' && args.cita.length > 0 && args.cita.length <= 300;
-  if (name !== 'evaluar_conversacion' || keys.length !== 4 || !['request_id', 'revision_previa', 'transcripcion_interlocutor', 'ficha'].every(k => Object.hasOwn(args, k))) return false;
+  if (name !== 'evaluar_conversacion' || !['request_id', 'revision_previa', 'transcripcion_interlocutor'].every(k => Object.hasOwn(args, k)) || keys.some(k => !['request_id', 'revision_previa', 'transcripcion_interlocutor', 'ficha'].includes(k))) return false;
   return typeof args.request_id === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(args.request_id) &&
     Number.isSafeInteger(args.revision_previa) && args.revision_previa >= 0 &&
     typeof args.transcripcion_interlocutor === 'string' && args.transcripcion_interlocutor.trim().length > 0 && args.transcripcion_interlocutor.length <= 12000 &&
     !/(?:^|\n)\s*Act on the user's request in the voice conversation\.\s*(?:\n|$)/u.test(args.transcripcion_interlocutor) &&
-    object(args.ficha) && Object.keys(args.ficha).length === 4 && fields.every(k => Object.hasOwn(args.ficha, k) && typeof args.ficha[k] === 'string' && args.ficha[k].length <= 300 && (!args.ficha[k] || args.transcripcion_interlocutor.includes(args.ficha[k])));
+    (args.ficha === undefined || (object(args.ficha) && Object.keys(args.ficha).every(k => fields.includes(k) && typeof args.ficha[k] === 'string' && args.ficha[k].length <= 300 && (!args.ficha[k] || args.transcripcion_interlocutor.includes(args.ficha[k])))));
 }
 
 // MCP stateless; la llamada y sus consentimientos viven en PhoneBridge, no en el modelo.
@@ -103,7 +103,7 @@ export function createLivePhoneMcp(config) {
         if (name === 'evaluar_conversacion') {
           let cache = requests.get(id);
           if (!cache) { cache = new Map(); requests.set(id, cache); }
-          const signature = createHash('sha256').update(JSON.stringify([args.revision_previa, args.transcripcion_interlocutor, ...fields.map(k => args.ficha[k])])).digest('hex');
+          const signature = createHash('sha256').update(JSON.stringify([args.revision_previa, args.transcripcion_interlocutor, ...fields.map(k => args.ficha?.[k] ?? '')])).digest('hex');
           const previous = cache.get(args.request_id);
           if (previous && previous.signature !== signature) throw Error('request_reused');
           if (!previous && cache.size >= 200) throw Error('request_limit');

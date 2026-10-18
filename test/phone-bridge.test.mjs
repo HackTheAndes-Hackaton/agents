@@ -348,6 +348,63 @@ test('el porcentaje conserva una probabilidad intermedia sin forzar alerta ni co
 
 const finalTurn = (text, timestamp) => ({ type: 'transcript', transcriptType: 'final', role: 'user', transcript: text, timestamp, call: { id, assistantId } });
 
+test('historial generado conserva los captions del agente y analiza solo finales acústicos del llamante', async t => {
+  const f = await fixture(t, { detect: async incident => { f.inputs.push(incident.transcripcion); return { alerta: false, probabilidad: .1 }; } });
+  await f.connect();
+  const snapshot = (timestamp, messages) => f.post({ type: 'conversation-update', timestamp, call: { id, assistantId }, messages });
+  const greeting = { role: 'bot', source: 'force-say', time: 10, message: 'Hola, dime.' };
+  await snapshot(15, [greeting]);
+  await f.post(finalTurn('La reunión es a las cinco.', 20));
+  await until(() => f.inputs.length === 1);
+  await snapshot(40, [greeting,
+    { role: 'user', time: 20, message: 'Esto es un historial distinto; no debe sustituir al audio.' },
+    { role: 'bot', source: 'model', time: 30, message: 'Entendido, la reunión es a las cinco.' }]);
+  await until(() => f.events.some(e => e.source === 'vapi_assistant_model_output'));
+  const lines = [...new Map(f.events.filter(e => e.type === 'transcript.update').map(e => [e.id, e])).values()].sort((a, b) => a.sequence - b.sequence);
+  assert.deepEqual(lines.map(e => [e.speaker, e.text]), [
+    ['agent', 'Hola, dime.'], ['caller', 'La reunión es a las cinco.'], ['agent', 'Entendido, la reunión es a las cinco.'],
+  ]);
+  assert.equal(lines[0].source, 'vapi_first_message');
+  assert.equal(lines[2].spoken_verified, false);
+  assert.equal(lines[1].source, 'vapi_transcript_final');
+  assert.deepEqual(f.inputs, ['La reunión es a las cinco.']);
+});
+
+test('una instantánea atrasada no cambia captions actuales ni mezcla texto del agente con alertas', async t => {
+  const f = await fixture(t); await f.connect();
+  const snapshot = (timestamp, text) => f.post({ type: 'conversation-update', timestamp, call: { id, assistantId }, messages: [
+    { role: 'bot', source: 'model', time: 10, message: text },
+  ] });
+  await snapshot(20, 'Texto generado inicial.');
+  await until(() => f.events.some(e => e.text === 'Texto generado inicial.'));
+  await snapshot(30, 'Texto generado actualizado.');
+  await until(() => f.events.some(e => e.text === 'Texto generado actualizado.'));
+  const before = f.events.length;
+  await snapshot(25, 'Texto generado inicial.');
+  await snapshot(30, 'Texto generado actualizado.');
+  await delay(20);
+  assert.equal(f.events.slice(before).some(e => e.type === 'transcript.update'), false);
+  assert.deepEqual(f.inputs, []);
+  assert.equal(f.events.some(e => e.type === 'alert.updated' || e.type === 'call.hangup_requested'), false);
+  const replayStart = f.events.length; await f.connect();
+  await until(() => f.events.slice(replayStart).some(e => e.text === 'Texto generado actualizado.'));
+  assert.equal(f.events.slice(replayStart).some(e => e.text === 'Texto generado inicial.'), false);
+});
+
+test('instantáneas del modelo requieren tiempo y origen válidos para mostrar la voz del agente', async t => {
+  const f = await fixture(t); await f.connect();
+  await f.post({ type: 'conversation-update', timestamp: 20, call: { id, assistantId }, messages: [
+    { role: 'bot', source: 'model', time: 10, message: 'Respuesta ficticia válida.' },
+    { role: 'user', source: 'model', time: 11, message: 'No soy la voz del agente.' },
+    { role: 'bot', source: 'other', time: 12, message: 'Origen no admitido.' },
+    { role: 'bot', source: 'model', time: '13', message: 'Sin tiempo verificable.' },
+    { role: 'bot', source: 'model', time: 14, message: 'x'.repeat(4001) },
+  ] });
+  await until(() => f.events.some(e => e.text === 'Respuesta ficticia válida.'));
+  assert.deepEqual(f.events.filter(e => e.type === 'transcript.update').map(e => e.text), ['Respuesta ficticia válida.']);
+  assert.deepEqual(f.inputs, []);
+});
+
 test('cierre hablado del agente ordena cortar ambas patas, nunca por palabras de quien llama', async t => {
   let cuts = 0;
   const f = await fixture(t, { detect: async () => ({ alerta: false, probabilidad: .1 }), endCall: async () => { cuts++; return 'requested'; } });

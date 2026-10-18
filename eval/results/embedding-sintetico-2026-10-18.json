@@ -1,0 +1,16 @@
+{
+  "synthetic_only": true,
+  "actual_model_weights": true,
+  "model_id": "speechbrain/spkrec-ecapa-voxceleb",
+  "model_version": "0f99f2d0ebe89ac095bcc5903c4dd8f72b367286:sb1.1.2:pcm16-v1",
+  "dimensions": 192,
+  "vector_norm": 0.9999999064426328,
+  "quality_status": "pending",
+  "review_status": "pendiente",
+  "reference_enabled": false,
+  "inference_ms": 85,
+  "includes_model_load_time": false,
+  "uploaded_to_api": false,
+  "real_speakers_tested": false,
+  "automatic_recognition_validated": false
+}

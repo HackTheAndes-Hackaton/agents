@@ -1,4 +1,5 @@
-// Búfer efímero del canal customer de Vapi. Nunca contiene la voz del asistente.
+// Búfer efímero del canal customer de Vapi; no mezcla el canal assistant.
+// En conferencia customer puede contener usuario + llamante o eco: no acredita un hablante único.
 export class PhoneAudioWindow {
   chunks = []; bytes = 0; rate = null;
   push(pcm, rate) {

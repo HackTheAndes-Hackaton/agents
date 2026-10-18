@@ -1,0 +1,12 @@
+{
+  "conversation_config": {
+    "agent": {
+      "prompt": {
+        "llm": "gpt-4.1-mini",
+        "reasoning_effort": null,
+        "thinking_budget": null,
+        "max_tokens": 160
+      }
+    }
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "rows": [
+    {
+      "id": "reunion",
+      "alerta": false,
+      "probabilidad": 0,
+      "estado": "observar",
+      "categories": [
+        "solicitud_cotidiana"
+      ],
+      "duration_ms": 998,
+      "passed": true
+    },
+    {
+      "id": "prestamo",
+      "alerta": false,
+      "probabilidad": 0,
+      "estado": "verificar",
+      "categories": [
+        "peticion_pago",
+        "verificacion_independiente"
+      ],
+      "duration_ms": 922,
+      "passed": true
+    },
+    {
+      "id": "extorsion",
+      "alerta": true,
+      "probabilidad": 1,
+      "estado": "alertar",
+      "categories": [
+        "peticion_pago",
+        "aislamiento",
+        "amenaza"
+      ],
+      "duration_ms": 928,
+      "passed": true
+    },
+    {
+      "id": "codigo_bancario",
+      "alerta": true,
+      "probabilidad": 1,
+      "estado": "alertar",
+      "categories": [
+        "autoridad_alegada",
+        "peticion_credenciales"
+      ],
+      "duration_ms": 1007,
+      "passed": true
+    },
+    {
+      "id": "amenaza_recibida",
+      "alerta": false,
+      "probabilidad": 0.01,
+      "estado": "observar",
+      "categories": [
+        "relato_amenaza",
+        "solicitud_cotidiana"
+      ],
+      "duration_ms": 936,
+      "passed": true
+    },
+    {
+      "id": "negacion",
+      "alerta": false,
+      "probabilidad": 0,
+      "estado": "observar",
+      "categories": [
+        "negacion",
+        "solicitud_cotidiana"
+      ],
+      "duration_ms": 993,
+      "passed": true
+    },
+    {
+      "id": "peticion_sin_contexto",
+      "alerta": false,
+      "probabilidad": 0,
+      "estado": "inconcluso",
+      "categories": [
+        "solicitud"
+      ],
+      "duration_ms": 1055,
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "fictional": true,
+  "method": "Inferencia con los modelos reales desde la VM, texto sintético; una muestra por caso. No mide calidad de voz ni latencia de telefonía.",
+  "corpus_sha256": "910b22616a2d67d296983cfc8b6093435c1844a377da666b584ab45e2e850c30",
+  "models": {
+    "detection": "gpt-6-luna",
+    "understanding": "gpt-4.1-mini"
+  },
+  "runtime_sha256": "d6940cb00b6cac5cfb0c95c1a0673c399c3e752fd476b5523b52353510f76373"
+}

@@ -1,4 +1,5 @@
 import { groundUnderstanding } from './understanding.mjs';
+import { segmentRisk } from './risk-segments.mjs';
 
 const guidance = {
   observar: 'Escucha el siguiente turno. La ausencia de señales actuales no demuestra que la llamada sea segura.',
@@ -6,12 +7,12 @@ const guidance = {
   alertar: 'Advierte del riesgo sin acusar ni atribuir identidad. Recomienda no transferir ni compartir claves y verificar por un canal independiente.',
   inconcluso: 'Pide repetir o aclarar la petición. No completes palabras dudosas ni interpretes un fallo de análisis como ausencia de riesgo.',
 };
-const requests = new Set(['solicitud', 'peticion_pago', 'peticion_credenciales', 'acceso_remoto', 'presion', 'aislamiento', 'amenaza']);
+const requests = new Set(['peticion_pago', 'peticion_credenciales', 'acceso_remoto', 'presion', 'aislamiento', 'amenaza']);
 const descriptions = {
   peticion_pago: 'una petición de dinero', peticion_credenciales: 'una petición de claves o códigos',
   acceso_remoto: 'una petición de acceso remoto', presion: 'presión para actuar de inmediato',
   aislamiento: 'restricciones para verificar por otro canal', amenaza: 'una posible amenaza',
-  solicitud: 'una petición que conviene aclarar', autoridad_alegada: 'una identidad declarada que aún no se ha comprobado',
+  solicitud: 'una petición todavía sin clasificar', autoridad_alegada: 'una identidad declarada que aún no se ha comprobado',
 };
 
 // Política de orientación; no autoriza cortes, retención, SMS ni identifica voces.
@@ -25,8 +26,9 @@ export function assessCall({ transcript, decision, understanding }) {
   const explicitGap = typeof transcript === 'string' && /\[(?:inaudible|ininteligible|audio no disponible)\]/iu.test(transcript);
   let state;
   if (validDecision && decision.alerta) state = 'alertar';
-  else if (explicitGap || !validDecision || !grounded || !signals.length || signals.some(e => e.tipo === 'ambiguo')) state = 'inconcluso';
+  else if (explicitGap || !validDecision || !grounded || !signals.length || signals.some(e => e.tipo === 'ambiguo') || signals.every(e => ['saludo', 'presentacion'].includes(e.tipo))) state = 'inconcluso';
   else if (signals.some(e => requests.has(e.tipo) || e.tipo === 'autoridad_alegada')) state = 'verificar';
+  else if (signals.some(e => e.tipo === 'solicitud')) state = 'inconcluso';
   else state = 'observar';
   const topics = [...new Set(signals.map(e => descriptions[e.tipo]).filter(Boolean))].slice(0, 3);
   const reason = explicitGap ? 'Hay un fragmento marcado como inaudible; hace falta aclaración.'
@@ -38,6 +40,7 @@ export function assessCall({ transcript, decision, understanding }) {
     version: 'orientacion_v1', estado: state, motivo: reason, orientacion: guidance[state],
     alerta: validDecision ? decision.alerta : null,
     evidencia_textual: signals.map(({ tipo, cita }) => ({ tipo, cita })),
+    modalidades: segmentRisk(signals, validDecision && decision.alerta),
     explicacion_disponible: Boolean(grounded?.evidencias.length),
     fragmento_inaudible_marcado: explicitGap,
     voz_sintetica: { estado: 'no_evaluada', motivo: 'No hay un detector acústico validado en este canal.' },

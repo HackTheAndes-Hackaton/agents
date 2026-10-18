@@ -1,0 +1,28 @@
+{
+  "sample_rate": 8000,
+  "synthetic_only": true,
+  "pstn_tested": false,
+  "llm_endcall_disabled_for_backend_test": false,
+  "first_audio_ms": 2762,
+  "reply_audio_ms": 1608,
+  "audio_before_input_finished": false,
+  "alert_after_speech_ms": 2113,
+  "alerta": false,
+  "caller_captions": 1,
+  "agent_captions": 4,
+  "ready_to_answer": true,
+  "hangup_requested": false,
+  "hangup_events": [],
+  "states": [
+    "observar"
+  ],
+  "provider_status": "ended",
+  "ended_reason": "customer-ended-call",
+  "error": null,
+  "case": "relato_de_amenaza_a_tercero",
+  "automatic_hangup_consent": true,
+  "modalidades": [
+    "relato_o_denuncia",
+    "solicitud_cotidiana"
+  ]
+}

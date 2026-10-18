@@ -19,7 +19,7 @@ async function fixture(t, overrides = {}) {
   const bridge = createPhoneBridge({ liveEnabled: true, liveSecret: secret, secret: webhookSecret, accessCode: code, assistantId,
     liveLookupCall: async callId => ({ id: callId, assistantId, status: 'in-progress' }), ai: {},
     detect: async incident => { inputs.push(incident.transcripcion); return { alerta: false, probabilidad: .01 }; },
-    understand: async incident => ({ rol: 'comprension', evidencias: [{ tipo: 'contexto', cita: incident.transcripcion }] }),
+    understand: async incident => ({ rol: 'comprension', evidencias: [{ tipo: incident.transcripcion === 'Hola.' ? 'saludo' : 'contexto', cita: incident.transcripcion }] }),
     endCall: async () => { cuts++; return 'requested'; }, ...overrides });
   const server = http.createServer((req, res) => void bridge.http(req, res, new URL(req.url, 'http://localhost').pathname));
   server.on('upgrade', (req, socket, head) => bridge.upgrade(req, socket, head, new URL(req.url, 'http://localhost').pathname));
@@ -80,15 +80,14 @@ test('rechaza análisis sin monitor, asistente incorrecto y una llamada distinta
   assert.deepEqual(g.inputs, []);
 });
 
-test('retorna el análisis a Live y publica en la APK sin prometer identidad; espera cuatro declaraciones', async t => {
+test('un saludo no invita a entrar; una petición cotidiana avanza sin nombre, entidad ni ficha', async t => {
   const f = await fixture(t); await f.connect();
   const first = await f.evaluate('Hola.');
   assert.equal(first.value.ready_to_answer, false);
   assert.equal(first.value.identity_verified, false);
-  assert.equal(first.value.assessment.estado, 'observar');
-  const text = 'Me llamo Persona de Prueba. Llamo como particular. Quiero dejar un recado. No pido dinero ni datos.';
-  const fields = { nombre: 'Me llamo Persona de Prueba.', entidad: 'Llamo como particular.', motivo: 'Quiero dejar un recado.', peticion: 'No pido dinero ni datos.' };
-  const result = await f.evaluate(text, 1, 'request_2', fields);
+  assert.equal(first.value.assessment.estado, 'inconcluso');
+  const text = 'Quiero coordinar una reunión mañana.';
+  const result = await f.tool('evaluar_conversacion', { request_id: 'request_2', revision_previa: 1, transcripcion_interlocutor: text });
   assert.equal(result.value.ready_to_answer, true);
   await until(() => f.events.some(e => e.type === 'call.ready_to_answer'));
   const ready = f.events.find(e => e.type === 'call.ready_to_answer');
@@ -98,6 +97,24 @@ test('retorna el análisis a Live y publica en la APK sin prometer identidad; es
   assert.equal(caption.source, 'live_reasoner_report_not_audio_verified');
   assert.equal(caption.final, false);
   assert.equal(result.value.audio_evidence, 'unavailable_in_vapi_live');
+  assert.equal(Object.hasOwn(result.value, 'missing_fields'), false);
+});
+
+test('revisa progresivamente: recado, préstamo sin amenaza y extorsión; solo la alerta vigente corta', async t => {
+  const f = await fixture(t, {
+    detect: async incident => ({ alerta: incident.transcripcion.includes('Si no pagas'), probabilidad: incident.transcripcion.includes('Si no pagas') ? .99 : .03 }),
+    understand: async incident => ({ rol: 'comprension', evidencias: [{ tipo: incident.transcripcion.includes('Si no pagas') ? 'amenaza' : incident.transcripcion.includes('dinero') ? 'peticion_pago' : 'solicitud_cotidiana', cita: incident.transcripcion }] }),
+  });
+  await f.connect(true);
+  const submit = (text, revision) => f.tool('evaluar_conversacion', { request_id: 'turn_'+revision, revision_previa: revision, transcripcion_interlocutor: text });
+  assert.equal((await submit('Quiero dejar un recado.', 0)).value.ready_to_answer, true);
+  const loan = await submit('Quiero dejar un recado.\n¿Me puedes prestar dinero?', 1);
+  assert.equal(loan.value.assessment.estado, 'verificar'); assert.equal(loan.value.ready_to_answer, false); assert.equal(f.cuts(), 0);
+  await submit('Quiero dejar un recado.\n¿Me puedes prestar dinero?\nSi no pagas, le haremos daño a tu familia.', 2);
+  await until(() => f.cuts() === 1);
+  await until(() => f.events.some(e => e.type === 'call.hangup_requested'));
+  assert.equal(f.events.find(e => e.type === 'call.hangup_requested').revision, 3);
+  assert.equal(f.events.some(e => e.type === 'call.ready_to_answer' && e.revision > 1), false);
 });
 
 test('reintento idempotente no repite inferencia y rechaza reutilizar la clave o inventar citas', async t => {

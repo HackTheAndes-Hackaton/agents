@@ -1,0 +1,3 @@
+# Entorno opcional separado del servidor Node. Pesos fijados en extraer-muestra-voz.py.
+speechbrain==1.1.2
+numpy>=2.2,<3

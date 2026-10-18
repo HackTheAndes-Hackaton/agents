@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 const question = JSON.parse(await readFile(new URL('./prompts/deteccion.json', import.meta.url), 'utf8'));
+question.instructions += '\n\n' + await readFile(new URL('./prompts/es-PE.md', import.meta.url), 'utf8');
 
 export function parseThreshold(value = 0.5) {
   const result = Number(value);

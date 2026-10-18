@@ -33,6 +33,8 @@ El flujo duerme Comprensión antes de llamar a Detección porque el plan gratuit
 
 ## Canal de voz desplegado
 
+Estado de la telefonía al 18 de octubre de 2026: Vapi usa **Soniox v5 → GPT-4.1 mini → Eleven Flash v2.5 (Sarah)**, con `VAPI_LIVE_MCP_ENABLED=false`. La configuración revisable está en [config/vapi-cascade-assistant.json](config/vapi-cascade-assistant.json). La ruta de voz por internet con marin es independiente. Véanse la [comparación de transcriptores](docs/COMPARACION_TRANSCRIPTORES.md), el [ensayo telefónico](docs/ENSAYO_CASCADA_TELEFONICA.md) y la [adaptación peruana y comparación vocal](docs/PERU_CONDUCTAS_Y_VOZ.md) para distinguir resultados publicados, experimentos y límites. La extracción de embeddings está probada localmente con audio sintético; no está conectada automáticamente a llamadas reales. La captura telefónica permanece desactivada por defecto.
+
 **andes-voz:** https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755
 
 Abre la página HTTPS, introduce el código privado del equipo, confirma la autorización y conecta un micrófono o un archivo de prueba. La página muestra transcripción, alerta booleana y comprensión. El código se encuentra localmente en `.maritime/voice-access.json`, excluido de Git. En Android también se puede abrir Inicio → Abrir canal de voz, con captura nativa a 48 kHz y creación automática de su sala. El modo demo de llamadas es independiente. La página web conserva la opción de conectar un observador temporal. No distribuyas el código maestro en una aplicación publicada.
